@@ -34,24 +34,24 @@ class App extends Component {
     return (
       <div className="App">
         <Switch>
-          <Route exact path="/login">
+          <Route exact path="/library-management-system/login">
             {this.state.isLoggedIn ? (
               <Redirect
                 to={{
-                  pathname: "/",
+                  pathname: "/library-management-system",
                 }}
               />
             ) : (
               <LoginRegister />
             )}
           </Route>
-          <Route exact path="/">
+          <Route exact path="/library-management-system">
             {this.state.isLoggedIn ? (
               <Homepage />
             ) : (
               <Redirect
                 to={{
-                  pathname: "/login",
+                  pathname: "/library-management-system/login",
                 }}
               />
             )}
