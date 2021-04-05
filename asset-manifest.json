@@ -1,0 +1,24 @@
+{
+  "files": {
+    "main.css": "/library-management-system/static/css/main.15190cd0.chunk.css",
+    "main.js": "/library-management-system/static/js/main.0f61e062.chunk.js",
+    "main.js.map": "/library-management-system/static/js/main.0f61e062.chunk.js.map",
+    "runtime-main.js": "/library-management-system/static/js/runtime-main.b17a2e9b.js",
+    "runtime-main.js.map": "/library-management-system/static/js/runtime-main.b17a2e9b.js.map",
+    "static/js/2.08e6426a.chunk.js": "/library-management-system/static/js/2.08e6426a.chunk.js",
+    "static/js/2.08e6426a.chunk.js.map": "/library-management-system/static/js/2.08e6426a.chunk.js.map",
+    "static/js/3.68739dc9.chunk.js": "/library-management-system/static/js/3.68739dc9.chunk.js",
+    "static/js/3.68739dc9.chunk.js.map": "/library-management-system/static/js/3.68739dc9.chunk.js.map",
+    "index.html": "/library-management-system/index.html",
+    "service-worker.js": "/library-management-system/service-worker.js",
+    "service-worker.js.map": "/library-management-system/service-worker.js.map",
+    "static/css/main.15190cd0.chunk.css.map": "/library-management-system/static/css/main.15190cd0.chunk.css.map",
+    "static/js/2.08e6426a.chunk.js.LICENSE.txt": "/library-management-system/static/js/2.08e6426a.chunk.js.LICENSE.txt"
+  },
+  "entrypoints": [
+    "static/js/runtime-main.b17a2e9b.js",
+    "static/js/2.08e6426a.chunk.js",
+    "static/css/main.15190cd0.chunk.css",
+    "static/js/main.0f61e062.chunk.js"
+  ]
+}
