@@ -1,0 +1,21 @@
+.LoginRegister {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+.LoginRegister-Form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.LoginRegister-FormContainer {
+  padding: 1rem;
+}
+@media (max-width: 768px) {
+  .LoginRegister-FormContainer {
+    width: 80vw;
+  }
+}
