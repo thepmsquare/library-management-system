@@ -3,12 +3,14 @@ import { Switch, Route, Redirect } from "react-router-dom";
 import firebase from "./Firebase";
 import LoginRegister from "./LoginRegister";
 import Homepage from "./Homepage";
+const db = firebase.firestore();
 
 class App extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      isLoggedIn: false,
+      user: false,
+      userIsAdmin: false,
     };
   }
 
@@ -19,12 +21,23 @@ class App extends Component {
   checkLogin = () => {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        this.setState(() => {
-          return { isLoggedIn: true };
-        });
+        db.collection("Users")
+          .doc(user.uid)
+          .get()
+          .then((doc) => {
+            let userIsAdmin = doc.data().isAdmin;
+            this.setState(() => {
+              return { user, userIsAdmin };
+            });
+          })
+          .catch((error) => {
+            // idk how to handle this error.
+            alert(error.message);
+            firebase.auth().signOut();
+          });
       } else {
         this.setState(() => {
-          return { isLoggedIn: false };
+          return { user: false };
         });
       }
     });
@@ -35,7 +48,7 @@ class App extends Component {
       <div className="App">
         <Switch>
           <Route exact path="/library-management-system/login">
-            {this.state.isLoggedIn ? (
+            {this.state.user ? (
               <Redirect
                 to={{
                   pathname: "/library-management-system",
@@ -46,8 +59,11 @@ class App extends Component {
             )}
           </Route>
           <Route exact path="/library-management-system">
-            {this.state.isLoggedIn ? (
-              <Homepage />
+            {this.state.user ? (
+              <Homepage
+                user={this.state.user}
+                userIsAdmin={this.state.userIsAdmin}
+              />
             ) : (
               <Redirect
                 to={{

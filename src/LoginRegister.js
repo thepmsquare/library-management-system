@@ -128,19 +128,17 @@ class LoginRegister extends Component {
             displayName: this.state.registerUsername,
           })
           .then(() => {
-            if (isAdmin) {
-              db.collection("Users")
-                .doc(userCredential.user.uid)
-                .set({ isAdmin: true })
-                .catch((error) => {
-                  this.setState(() => {
-                    return {
-                      isSnackbarOpen: true,
-                      snackbarMessage: error.message,
-                    };
-                  });
+            db.collection("Users")
+              .doc(userCredential.user.uid)
+              .set({ isAdmin })
+              .catch((error) => {
+                this.setState(() => {
+                  return {
+                    isSnackbarOpen: true,
+                    snackbarMessage: error.message,
+                  };
                 });
-            }
+              });
           })
           .catch((error) => {
             this.setState(() => {
