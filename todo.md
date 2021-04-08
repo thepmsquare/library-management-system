@@ -1,0 +1,7 @@
+- [ ] send email verification after register
+- [ ] forgot password
+- [ ] change display name
+- [ ] change email
+- [ ] change password
+- [ ] delete account
+- [ ] (admin) view and change adminKeys
