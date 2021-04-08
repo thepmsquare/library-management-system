@@ -131,6 +131,16 @@ class LoginRegister extends Component {
             db.collection("Users")
               .doc(userCredential.user.uid)
               .set({ isAdmin })
+              .then(() => {
+                userCredential.user.sendEmailVerification().catch((error) => {
+                  this.setState(() => {
+                    return {
+                      isSnackbarOpen: true,
+                      snackbarMessage: error.message,
+                    };
+                  });
+                });
+              })
               .catch((error) => {
                 this.setState(() => {
                   return {

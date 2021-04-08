@@ -3,6 +3,7 @@ import { Switch, Route, Redirect } from "react-router-dom";
 import firebase from "./Firebase";
 import LoginRegister from "./LoginRegister";
 import Homepage from "./Homepage";
+import VerifyEmail from "./VerifyEmail";
 const db = firebase.firestore();
 
 class App extends Component {
@@ -25,7 +26,7 @@ class App extends Component {
           .doc(user.uid)
           .get()
           .then((doc) => {
-            let userIsAdmin = doc.data().isAdmin;
+            let userIsAdmin = doc.data() ? doc.data().isAdmin : false;
             this.setState(() => {
               return { user, userIsAdmin };
             });
@@ -60,10 +61,14 @@ class App extends Component {
           </Route>
           <Route exact path="/library-management-system">
             {this.state.user ? (
-              <Homepage
-                user={this.state.user}
-                userIsAdmin={this.state.userIsAdmin}
-              />
+              this.state.user.emailVerified ? (
+                <Homepage
+                  user={this.state.user}
+                  userIsAdmin={this.state.userIsAdmin}
+                />
+              ) : (
+                <VerifyEmail user={this.state.user} />
+              )
             ) : (
               <Redirect
                 to={{
