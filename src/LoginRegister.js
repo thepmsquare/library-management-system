@@ -230,6 +230,7 @@ class LoginRegister extends Component {
                 onChange={this.handleInputChange}
               ></TextField>
               <TextField
+                type="password"
                 label="Admin Key"
                 name="registerAdminKey"
                 value={this.state.registerAdminKey}
