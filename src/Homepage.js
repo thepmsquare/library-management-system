@@ -22,13 +22,13 @@ class Homepage extends Component {
 
   handleSnackbarOpen = (snackbarMessage) => {
     this.setState(() => {
-      return { snackbarOpen: true, snackbarMessage };
+      return { isSnackbarOpen: true, snackbarMessage };
     });
   };
 
   handleSnackbarClose = () => {
     this.setState(() => {
-      return { snackbarOpen: false, snackbarMessage: "" };
+      return { isSnackbarOpen: false, snackbarMessage: "" };
     });
   };
 
@@ -57,7 +57,7 @@ class Homepage extends Component {
             vertical: "bottom",
             horizontal: "left",
           }}
-          open={this.state.snackbarOpen}
+          open={this.state.isSnackbarOpen}
           autoHideDuration={6000}
           onClose={this.handleSnackbarClose}
           message={this.state.snackbarMessage}

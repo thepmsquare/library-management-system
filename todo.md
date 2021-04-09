@@ -1,5 +1,5 @@
-- [ ] send email verification after register
-- [ ] forgot password
+- [x] send email verification after register
+- [x] forgot password
 - [ ] change display name
 - [ ] change email
 - [ ] change password

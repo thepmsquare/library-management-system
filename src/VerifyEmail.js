@@ -15,7 +15,7 @@ class VerifyEmail extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      snackbarOpen: false,
+      isSnackbarOpen: false,
       snackbarMessage: "",
       isUserChangingEmail: false,
       newEmailInput: "",
@@ -25,7 +25,7 @@ class VerifyEmail extends Component {
 
   handleSnackbarClose = () => {
     this.setState(() => {
-      return { snackbarOpen: false, snackbarMessage: "" };
+      return { isSnackbarOpen: false, snackbarMessage: "" };
     });
   };
 
@@ -43,7 +43,7 @@ class VerifyEmail extends Component {
       .then(() => {
         this.setState(() => {
           return {
-            snackbarOpen: true,
+            isSnackbarOpen: true,
             snackbarMessage: `Email Resent to ${this.props.user.email}.`,
           };
         });
@@ -51,7 +51,7 @@ class VerifyEmail extends Component {
       .catch((error) => {
         this.setState(() => {
           return {
-            snackbarOpen: true,
+            isSnackbarOpen: true,
             snackbarMessage: error.message,
           };
         });
@@ -89,7 +89,7 @@ class VerifyEmail extends Component {
             this.setState(
               () => {
                 return {
-                  snackbarOpen: true,
+                  isSnackbarOpen: true,
                   snackbarMessage: `Email changed to ${this.state.newEmailInput}`,
                   isUserChangingEmail: false,
                   newEmailInput: "",
@@ -104,7 +104,7 @@ class VerifyEmail extends Component {
           .catch((error) => {
             this.setState(() => {
               return {
-                snackbarOpen: true,
+                isSnackbarOpen: true,
                 snackbarMessage: error.message,
               };
             });
@@ -113,7 +113,7 @@ class VerifyEmail extends Component {
       .catch((error) => {
         this.setState(() => {
           return {
-            snackbarOpen: true,
+            isSnackbarOpen: true,
             snackbarMessage: error.message,
           };
         });
@@ -166,7 +166,7 @@ class VerifyEmail extends Component {
             vertical: "bottom",
             horizontal: "left",
           }}
-          open={this.state.snackbarOpen}
+          open={this.state.isSnackbarOpen}
           autoHideDuration={6000}
           onClose={this.handleSnackbarClose}
           message={this.state.snackbarMessage}

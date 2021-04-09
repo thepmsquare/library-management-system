@@ -169,6 +169,37 @@ class LoginRegister extends Component {
       });
   };
 
+  handleForgotPassword = () => {
+    if (this.state.loginEmail) {
+      firebase
+        .auth()
+        .sendPasswordResetEmail(this.state.loginEmail)
+        .then(() => {
+          this.setState(() => {
+            return {
+              isSnackbarOpen: true,
+              snackbarMessage: `Password Reset Link sent at ${this.state.loginEmail}`,
+            };
+          });
+        })
+        .catch((error) => {
+          this.setState(() => {
+            return {
+              isSnackbarOpen: true,
+              snackbarMessage: error.message,
+            };
+          });
+        });
+    } else {
+      this.setState(() => {
+        return {
+          isSnackbarOpen: true,
+          snackbarMessage: "Please enter your Email address.",
+        };
+      });
+    }
+  };
+
   render = () => {
     return (
       <div className="LoginRegister">
@@ -202,6 +233,9 @@ class LoginRegister extends Component {
                 onChange={this.handleInputChange}
               ></TextField>
               <Button type="submit">Log In</Button>
+              <Button size="small" onClick={this.handleForgotPassword}>
+                Forgot password?
+              </Button>
             </form>
           ) : (
             <form
