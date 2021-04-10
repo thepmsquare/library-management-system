@@ -5,6 +5,7 @@ import CloseIcon from "@material-ui/icons/Close";
 import Header from "./Header";
 import Profile from "./Profile";
 import Library from "./Library";
+import "./stylesheets/Homepage.css";
 
 class Homepage extends Component {
   constructor(props) {
@@ -50,7 +51,12 @@ class Homepage extends Component {
         />
         {this.state.componentInFocus === "Library" && <Library />}
         {this.state.componentInFocus === "Profile" && (
-          <Profile handleChangeFocus={this.handleChangeFocus} />
+          <Profile
+            handleChangeFocus={this.handleChangeFocus}
+            user={this.props.user}
+            userIsAdmin={this.props.userIsAdmin}
+            handleSnackbarOpen={this.handleSnackbarOpen}
+          />
         )}
         <Snackbar
           anchorOrigin={{

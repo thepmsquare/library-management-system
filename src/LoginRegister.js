@@ -89,7 +89,7 @@ class LoginRegister extends Component {
               this.setState(() => {
                 return {
                   isSnackbarOpen: true,
-                  snackbarMessage: "Invalid Admin Keys",
+                  snackbarMessage: "Invalid Admin Key",
                 };
               });
             }

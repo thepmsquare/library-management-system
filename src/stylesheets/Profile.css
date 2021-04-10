@@ -1,0 +1,20 @@
+.Profile {
+  flex-grow: 1;
+}
+.Profile-BackButtonContainer {
+  display: flex;
+  padding: 1rem;
+  justify-content: flex-end;
+}
+.Profile .MuiAccordionSummary-content {
+  justify-content: space-between;
+}
+
+.Profile-AccordionForm {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+}

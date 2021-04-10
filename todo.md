@@ -1,7 +1,8 @@
 - [x] send email verification after register
 - [x] forgot password
-- [ ] change display name
-- [ ] change email
-- [ ] change password
-- [ ] delete account
-- [ ] (admin) view and change adminKeys
+- [x] change display name
+- [x] change email
+- [x] change password
+- [x] delete account
+- [x] (admin) view and change adminKeys
+- [ ] do not delete account if pending transactions.
