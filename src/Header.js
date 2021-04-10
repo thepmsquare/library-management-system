@@ -33,6 +33,7 @@ class Header extends Component {
 
   handleChangeFocus = () => {
     this.props.handleChangeFocus("Profile");
+    this.handleAccountMenuClose();
   };
 
   render = () => {
