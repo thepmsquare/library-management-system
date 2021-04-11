@@ -392,7 +392,7 @@ class Profile extends Component {
             </AccordionDetails>
           </Accordion>
 
-          {this.props.userIsAdmin ? (
+          {this.props.isUserAdmin ? (
             <Accordion
               expanded={this.state.isChangeAdminKeysExpanded}
               onChange={this.handleChangeAdminKeysExpandedToggle}

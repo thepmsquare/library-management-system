@@ -1,6 +1,15 @@
+.Header {
+  width: 100vw;
+}
 .Header-Toolbar {
   display: flex;
   justify-content: space-between;
+}
+.Header-ToolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: 66%;
 }
 .Header-AdminIcon {
   margin: 0 0.5rem 0 0;

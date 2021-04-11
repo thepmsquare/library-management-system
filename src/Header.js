@@ -9,6 +9,7 @@ import {
 } from "@material-ui/core";
 import AccountBoxIcon from "@material-ui/icons/AccountBox";
 import VerifiedUserIcon from "@material-ui/icons/VerifiedUser";
+import MenuIcon from "@material-ui/icons/Menu";
 import "./stylesheets/Header.css";
 
 class Header extends Component {
@@ -40,7 +41,15 @@ class Header extends Component {
     return (
       <AppBar position="sticky" className="Header">
         <Toolbar className="Header-Toolbar">
-          <Typography variant="h6">Library Management System</Typography>
+          <div className="Header-ToolbarLeft">
+            <IconButton color="inherit" onClick={this.props.handleDrawerOpen}>
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" noWrap>
+              Library Management System
+            </Typography>
+          </div>
+
           <IconButton
             color="inherit"
             onClick={this.handleAccountMenuOpen}
@@ -57,7 +66,7 @@ class Header extends Component {
           onClose={this.handleAccountMenuClose}
         >
           <MenuItem>
-            {this.props.userIsAdmin ? (
+            {this.props.isUserAdmin ? (
               <VerifiedUserIcon className="Header-AdminIcon" />
             ) : (
               ""

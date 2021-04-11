@@ -5,6 +5,8 @@ import CloseIcon from "@material-ui/icons/Close";
 import Header from "./Header";
 import Profile from "./Profile";
 import Library from "./Library";
+import Drawer from "./Drawer";
+import Inventory from "./Inventory";
 import "./stylesheets/Homepage.css";
 
 class Homepage extends Component {
@@ -14,6 +16,7 @@ class Homepage extends Component {
       isSnackbarOpen: false,
       snackbarMessage: "",
       componentInFocus: "Library",
+      isDrawerOpen: false,
     };
   }
 
@@ -39,25 +42,49 @@ class Homepage extends Component {
     });
   };
 
+  handleDrawerClose = () => {
+    this.setState(() => {
+      return {
+        isDrawerOpen: false,
+      };
+    });
+  };
+
+  handleDrawerOpen = () => {
+    this.setState(() => {
+      return {
+        isDrawerOpen: true,
+      };
+    });
+  };
+
   render = () => {
     return (
       <div className="Homepage">
         <Header
           user={this.props.user}
-          userIsAdmin={this.props.userIsAdmin}
+          isUserAdmin={this.props.isUserAdmin}
           handleSnackbarOpen={this.handleSnackbarOpen}
           handleLogout={this.handleLogout}
           handleChangeFocus={this.handleChangeFocus}
+          handleDrawerOpen={this.handleDrawerOpen}
         />
         {this.state.componentInFocus === "Library" && <Library />}
         {this.state.componentInFocus === "Profile" && (
           <Profile
             handleChangeFocus={this.handleChangeFocus}
             user={this.props.user}
-            userIsAdmin={this.props.userIsAdmin}
+            isUserAdmin={this.props.isUserAdmin}
             handleSnackbarOpen={this.handleSnackbarOpen}
           />
         )}
+        {this.state.componentInFocus === "Inventory" && <Inventory />}
+        <Drawer
+          isDrawerOpen={this.state.isDrawerOpen}
+          handleDrawerClose={this.handleDrawerClose}
+          isUserAdmin={this.props.isUserAdmin}
+          handleChangeFocus={this.handleChangeFocus}
+        />
         <Snackbar
           anchorOrigin={{
             vertical: "bottom",

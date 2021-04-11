@@ -11,7 +11,7 @@ class App extends Component {
     super(props);
     this.state = {
       user: false,
-      userIsAdmin: false,
+      isUserAdmin: false,
     };
   }
 
@@ -26,9 +26,9 @@ class App extends Component {
           .doc(user.uid)
           .get()
           .then((doc) => {
-            let userIsAdmin = doc.data() ? doc.data().isAdmin : false;
+            let isUserAdmin = doc.data() ? doc.data().isAdmin : false;
             this.setState(() => {
-              return { user, userIsAdmin };
+              return { user, isUserAdmin };
             });
           })
           .catch((error) => {
@@ -64,7 +64,7 @@ class App extends Component {
               this.state.user.emailVerified ? (
                 <Homepage
                   user={this.state.user}
-                  userIsAdmin={this.state.userIsAdmin}
+                  isUserAdmin={this.state.isUserAdmin}
                 />
               ) : (
                 <VerifyEmail user={this.state.user} />
