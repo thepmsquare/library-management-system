@@ -78,7 +78,9 @@ class Homepage extends Component {
             handleSnackbarOpen={this.handleSnackbarOpen}
           />
         )}
-        {this.state.componentInFocus === "Inventory" && <Inventory />}
+        {this.state.componentInFocus === "Inventory" && (
+          <Inventory handleSnackbarOpen={this.handleSnackbarOpen} />
+        )}
         <Drawer
           isDrawerOpen={this.state.isDrawerOpen}
           handleDrawerClose={this.handleDrawerClose}
