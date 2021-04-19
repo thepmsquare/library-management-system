@@ -86,12 +86,19 @@ class Inventory extends Component {
         }
       }
       url += `&key=${BooksAPIKey}`;
-
-      const result = await fetch(url);
-      const data = await result.json();
-      this.setState(() => {
-        return { searchResult: data.items };
-      });
+      try {
+        const result = await fetch(url);
+        const data = await result.json();
+        if (data.items) {
+          this.setState(() => {
+            return { searchResult: data.items };
+          });
+        } else {
+          this.props.handleSnackbarOpen("No results found.");
+        }
+      } catch (error) {
+        this.props.handleSnackbarOpen(error.message);
+      }
     }
   };
 
