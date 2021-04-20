@@ -11,11 +11,19 @@ import {
   TableCell,
   TableBody,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
+import EditIcon from "@material-ui/icons/Edit";
 import BooksAPIKey from "./BooksAPIKey";
 import defaultBook from "./images/defaultBook.png";
+import firebase from "./Firebase";
 import "./stylesheets/Inventory.css";
+const db = firebase.firestore();
 
 class Inventory extends Component {
   constructor(props) {
@@ -27,8 +35,53 @@ class Inventory extends Component {
       searchPublisher: "",
       searchISBN: "",
       searchResult: [],
+      isAddDialogOpen: false,
+      addId: "",
+      addQuantity: "",
+      addPrice: "",
+      inventory: [],
+      isEditDialogOpen: false,
+      editId: "",
+      editQuantity: "",
+      editPrice: "",
     };
   }
+
+  componentDidMount = () => {
+    this.unsubInventoryListener = db
+      .collection("Inventory")
+
+      .onSnapshot((querySnapshot) => {
+        let inventory = [];
+        querySnapshot.forEach(async (doc) => {
+          const url =
+            "https://www.googleapis.com/books/v1/volumes/" + doc.data().id;
+          try {
+            const result = await fetch(url);
+            const apiData = await result.json();
+            if (apiData) {
+              inventory.push({
+                ...apiData,
+                quantity: doc.data().quantity,
+                price: doc.data().price,
+              });
+              this.setState(() => {
+                return { inventory };
+              });
+            } else {
+              // this error will not occur unless googleapi deletes a book id.
+              this.props.handleSnackbarOpen("Book Id not found.");
+            }
+          } catch (error) {
+            this.props.handleSnackbarOpen(error.message);
+          }
+        });
+      });
+  };
+
+  componentWillUnmount = () => {
+    this.unsubInventoryListener();
+  };
 
   handleInputChange = (e) => {
     const name = e.target.getAttribute("name");
@@ -46,7 +99,7 @@ class Inventory extends Component {
     });
   };
 
-  handleAddItemSubmit = async (e) => {
+  handleSearchSubmit = async (e) => {
     e.preventDefault();
     if (
       !this.state.searchTitle &&
@@ -102,6 +155,121 @@ class Inventory extends Component {
     }
   };
 
+  handleDialogClose = () => {
+    this.setState(() => {
+      return {
+        isAddDialogOpen: false,
+        isEditDialogOpen: false,
+      };
+    });
+  };
+
+  handleAddItemDialogOpen = (id) => {
+    this.setState(() => {
+      return { addId: id, isAddDialogOpen: true };
+    });
+  };
+
+  handleAddSubmit = (e) => {
+    e.preventDefault();
+    db.collection("Inventory")
+      .where("id", "==", this.state.addId)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc));
+        if (docs.length > 0) {
+          this.props.handleSnackbarOpen("Duplicate Item.");
+        } else {
+          db.collection("Inventory")
+            .add({
+              id: this.state.addId,
+              quantity: this.state.addQuantity,
+              price: this.state.addPrice,
+            })
+            .then(() => {
+              this.setState(
+                () => {
+                  return {
+                    isAddDialogOpen: false,
+                    addQuantity: "",
+                    addPrice: "",
+                    addId: "",
+                    addItem: false,
+                    searchTitle: "",
+                    searchAuthor: "",
+                    searchPublisher: "",
+                    searchISBN: "",
+                    searchResult: [],
+                  };
+                },
+                () => {
+                  this.props.handleSnackbarOpen("Added to Inventory");
+                }
+              );
+            })
+            .catch((error) => {
+              this.props.handleSnackbarOpen(error.message);
+            });
+        }
+      })
+      .catch((error) => {
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
+  handleEditItemDialogOpen = (id) => {
+    this.setState((curState) => {
+      const editQuantity = curState.inventory.find((ele) => ele.id === id)
+        .quantity;
+      const editPrice = curState.inventory.find((ele) => ele.id === id).price;
+      return { editId: id, isEditDialogOpen: true, editQuantity, editPrice };
+    });
+  };
+
+  handleEditSubmit = (e) => {
+    e.preventDefault();
+    console.log(this.state.editId);
+    db.collection("Inventory")
+      .where("id", "==", this.state.editId)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        if (docs.length > 0) {
+          docs[0]
+            .update({
+              quantity: this.state.editQuantity,
+              price: this.state.editPrice,
+            })
+            .then(() => {
+              this.setState(
+                () => {
+                  return {
+                    isEditDialogOpen: false,
+                    editQuantity: "",
+                    editPrice: "",
+                    editId: "",
+                  };
+                },
+                () => {
+                  this.props.handleSnackbarOpen("Updated Inventory");
+                }
+              );
+            })
+            .catch((error) => {
+              this.props.handleSnackbarOpen(error.message);
+            });
+        } else {
+          // will not occur.
+          this.props.handleSnackbarOpen("Unexpected Error.");
+        }
+      })
+      .catch((error) => {
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
   render = () => {
     return (
       <div className="Inventory">
@@ -111,7 +279,7 @@ class Inventory extends Component {
           {this.state.addItem && (
             <div>
               <form
-                onSubmit={this.handleAddItemSubmit}
+                onSubmit={this.handleSearchSubmit}
                 className="Inventory-AddItemForm"
               >
                 <Typography variant="h4">Search for a book</Typography>
@@ -205,7 +373,11 @@ class Inventory extends Component {
                                 : ""}
                             </TableCell>
                             <TableCell>
-                              <IconButton>
+                              <IconButton
+                                onClick={() => {
+                                  this.handleAddItemDialogOpen(result.id);
+                                }}
+                              >
                                 <AddIcon />
                               </IconButton>
                             </TableCell>
@@ -223,6 +395,163 @@ class Inventory extends Component {
             </div>
           )}
         </Paper>
+        {this.state.inventory.length > 0 && (
+          <TableContainer component={Paper}>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell></TableCell>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Authors</TableCell>
+                  <TableCell>Publisher</TableCell>
+                  <TableCell>Published Date</TableCell>
+                  <TableCell>Price (₹)</TableCell>
+                  <TableCell>Quantity</TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {this.state.inventory.map((book) => {
+                  return (
+                    <TableRow key={book.id}>
+                      <TableCell>
+                        <img
+                          src={
+                            book.volumeInfo.imageLinks
+                              ? book.volumeInfo.imageLinks.thumbnail
+                              : defaultBook
+                          }
+                          alt={book.title}
+                        ></img>
+                      </TableCell>
+                      <TableCell>
+                        {book.volumeInfo.title ? book.volumeInfo.title : ""}
+                      </TableCell>
+                      <TableCell>
+                        {book.volumeInfo.authors
+                          ? book.volumeInfo.authors.join(", ")
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {book.volumeInfo.publisher
+                          ? book.volumeInfo.publisher
+                          : ""}
+                      </TableCell>
+                      <TableCell>
+                        {book.volumeInfo.publishedDate
+                          ? book.volumeInfo.publishedDate
+                          : ""}
+                      </TableCell>
+                      <TableCell>{book.price ? book.price : ""}</TableCell>
+                      <TableCell>
+                        {book.quantity ? book.quantity : ""}
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          onClick={() => {
+                            this.handleEditItemDialogOpen(book.id);
+                          }}
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+        <Dialog
+          open={this.state.isAddDialogOpen}
+          onClose={this.handleDialogClose}
+        >
+          <form onSubmit={this.handleAddSubmit}>
+            <DialogTitle>Add to inventory</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                {this.state.isAddDialogOpen
+                  ? this.state.searchResult.find(
+                      (ele) => ele.id === this.state.addId
+                    ).volumeInfo.title
+                  : ""}
+              </DialogContentText>
+              <TextField
+                required
+                type="number"
+                value={this.state.addQuantity}
+                onChange={this.handleInputChange}
+                name="addQuantity"
+                label="Quantity"
+                InputProps={{ inputProps: { min: 0 } }}
+                fullWidth
+              />
+              <TextField
+                required
+                type="number"
+                value={this.state.addPrice}
+                onChange={this.handleInputChange}
+                name="addPrice"
+                label="Price (₹)"
+                InputProps={{ inputProps: { min: 0, step: "any" } }}
+                fullWidth
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleDialogClose} color="primary">
+                Cancel
+              </Button>
+              <Button color="primary" type="submit">
+                Add
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+        <Dialog
+          open={this.state.isEditDialogOpen}
+          onClose={this.handleDialogClose}
+        >
+          <form onSubmit={this.handleEditSubmit}>
+            <DialogTitle>Edit inventory</DialogTitle>
+            <DialogContent>
+              <DialogContentText>
+                {this.state.isEditDialogOpen
+                  ? this.state.inventory.find(
+                      (ele) => ele.id === this.state.editId
+                    ).volumeInfo.title
+                  : ""}
+              </DialogContentText>
+              <TextField
+                required
+                type="number"
+                value={this.state.editQuantity}
+                onChange={this.handleInputChange}
+                name="editQuantity"
+                label="Quantity"
+                InputProps={{ inputProps: { min: 0 } }}
+                fullWidth
+              />
+              <TextField
+                required
+                type="number"
+                value={this.state.editPrice}
+                onChange={this.handleInputChange}
+                name="editPrice"
+                label="Price (₹)"
+                InputProps={{ inputProps: { min: 0, step: "any" } }}
+                fullWidth
+              />
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleDialogClose} color="primary">
+                Cancel
+              </Button>
+              <Button color="primary" type="submit">
+                Save
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
       </div>
     );
   };
