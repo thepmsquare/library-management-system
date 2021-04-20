@@ -229,7 +229,6 @@ class Inventory extends Component {
 
   handleEditSubmit = (e) => {
     e.preventDefault();
-    console.log(this.state.editId);
     db.collection("Inventory")
       .where("id", "==", this.state.editId)
       .get()
