@@ -19,6 +19,7 @@ import {
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
 import EditIcon from "@material-ui/icons/Edit";
+import DeleteIcon from "@material-ui/icons/Delete";
 import BooksAPIKey from "./BooksAPIKey";
 import defaultBook from "./images/defaultBook.png";
 import firebase from "./Firebase";
@@ -44,6 +45,8 @@ class Inventory extends Component {
       editId: "",
       editQuantity: "",
       editPrice: "",
+      isDeleteDialogOpen: false,
+      idToBeDeleted: "",
     };
   }
 
@@ -160,6 +163,10 @@ class Inventory extends Component {
       return {
         isAddDialogOpen: false,
         isEditDialogOpen: false,
+        isDeleteDialogOpen: false,
+        addId: "",
+        editId: "",
+        idToBeDeleted: "",
       };
     });
   };
@@ -263,6 +270,46 @@ class Inventory extends Component {
           // will not occur.
           this.props.handleSnackbarOpen("Unexpected Error.");
         }
+      })
+      .catch((error) => {
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
+  handleDeleteDialogOpen = (id) => {
+    this.setState(() => {
+      return {
+        isDeleteDialogOpen: true,
+        idToBeDeleted: id,
+      };
+    });
+  };
+
+  handleDeleteItem = () => {
+    db.collection("Inventory")
+      .where("id", "==", this.state.idToBeDeleted)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        docs[0]
+          .delete()
+          .then(() => {
+            this.setState(
+              () => {
+                return {
+                  isDeleteDialogOpen: false,
+                  idToBeDeleted: "",
+                };
+              },
+              () => {
+                this.props.handleSnackbarOpen("Item successfully deleted!");
+              }
+            );
+          })
+          .catch((error) => {
+            this.props.handleSnackbarOpen(error.message);
+          });
       })
       .catch((error) => {
         this.props.handleSnackbarOpen(error.message);
@@ -407,6 +454,7 @@ class Inventory extends Component {
                   <TableCell>Price (₹)</TableCell>
                   <TableCell>Quantity</TableCell>
                   <TableCell></TableCell>
+                  <TableCell></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -452,6 +500,16 @@ class Inventory extends Component {
                           }}
                         >
                           <EditIcon />
+                        </IconButton>
+                      </TableCell>
+                      <TableCell>
+                        <IconButton
+                          onClick={() => {
+                            this.handleDeleteDialogOpen(book.id);
+                          }}
+                          color="secondary"
+                        >
+                          <DeleteIcon />
                         </IconButton>
                       </TableCell>
                     </TableRow>
@@ -550,6 +608,20 @@ class Inventory extends Component {
               </Button>
             </DialogActions>
           </form>
+        </Dialog>
+        <Dialog
+          open={this.state.isDeleteDialogOpen}
+          onClose={this.handleDialogClose}
+        >
+          <DialogTitle>Confirm Deletion.</DialogTitle>
+          <DialogActions>
+            <Button onClick={this.handleDialogClose} color="primary">
+              Cancel
+            </Button>
+            <Button onClick={this.handleDeleteItem} color="secondary">
+              Delete
+            </Button>
+          </DialogActions>
         </Dialog>
       </div>
     );
