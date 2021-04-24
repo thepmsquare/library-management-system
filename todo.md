@@ -6,3 +6,4 @@
 - [x] delete account
 - [x] (admin) view and change adminKeys
 - [ ] do not delete account if pending transactions.
+- [ ] close opened dialogs in case of error.

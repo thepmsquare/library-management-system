@@ -15,7 +15,7 @@ class Homepage extends Component {
     this.state = {
       isSnackbarOpen: false,
       snackbarMessage: "",
-      componentInFocus: "Library",
+      componentInFocus: this.props.isUserAdmin ? "Inventory" : "Library",
       isDrawerOpen: false,
     };
   }
@@ -69,7 +69,12 @@ class Homepage extends Component {
           handleChangeFocus={this.handleChangeFocus}
           handleDrawerOpen={this.handleDrawerOpen}
         />
-        {this.state.componentInFocus === "Library" && <Library />}
+        {this.state.componentInFocus === "Library" && (
+          <Library
+            user={this.props.user}
+            handleSnackbarOpen={this.handleSnackbarOpen}
+          />
+        )}
         {this.state.componentInFocus === "Profile" && (
           <Profile
             handleChangeFocus={this.handleChangeFocus}

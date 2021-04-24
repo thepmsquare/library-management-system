@@ -41,13 +41,14 @@ class Drawer extends Component {
               <ListItemText primary="Inventory" />
             </ListItem>
           )}
-
-          <ListItem button key="Library" onClick={this.handleLibraryClick}>
-            <ListItemIcon>
-              <StoreIcon />
-            </ListItemIcon>
-            <ListItemText primary="Library" />
-          </ListItem>
+          {!this.props.isUserAdmin && (
+            <ListItem button key="Library" onClick={this.handleLibraryClick}>
+              <ListItemIcon>
+                <StoreIcon />
+              </ListItemIcon>
+              <ListItemText primary="Library" />
+            </ListItem>
+          )}
         </List>
       </MUIDrawer>
     );
