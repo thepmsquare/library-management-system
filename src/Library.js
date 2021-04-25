@@ -67,10 +67,21 @@ class Library extends Component {
     this.unSubDontShow = db
       .collection("Requests")
       .where("userID", "==", this.props.user.uid)
-      .where("status", "in", ["pending", "approved", "collected"])
-      .onSnapshot((querySnapshot2) => {
+
+      .onSnapshot((querySnapshot) => {
         let dontShow = [];
-        querySnapshot2.forEach((doc) => dontShow.push(doc.data().bookID));
+        querySnapshot.forEach((doc) => {
+          if (
+            doc.data().history[doc.data().history.length - 1].status ===
+              "pending" ||
+            doc.data().history[doc.data().history.length - 1].status ===
+              "approved" ||
+            doc.data().history[doc.data().history.length - 1].status ===
+              "collected"
+          ) {
+            dontShow.push(doc.data().bookID);
+          }
+        });
         this.setState(() => {
           return {
             dontShow,
@@ -107,7 +118,12 @@ class Library extends Component {
       .then((querySnapshot) => {
         const docs = [];
         querySnapshot.forEach((doc) => docs.push(doc.data()));
-        if (docs.length > 0) {
+        if (
+          docs[0] &&
+          (docs[0].history[docs[0].history.length - 1].status === "pending" ||
+            docs[0].history[docs[0].history.length - 1].status === "approved" ||
+            docs[0].history[docs[0].history.length - 1].status === "collected")
+        ) {
           this.props.handleSnackbarOpen("Book Already Requested");
         } else {
           db.collection("Requests")
@@ -116,7 +132,14 @@ class Library extends Component {
             .then((querySnapshot2) => {
               const docs2 = [];
               querySnapshot2.forEach((doc) => docs2.push(doc.data()));
-              if (docs2.length >= numOfAllowedBooks) {
+              if (
+                docs2.filter(
+                  (ele) =>
+                    ele.history[ele.history.length - 1].status === "pending" ||
+                    ele.history[ele.history.length - 1].status === "approved" ||
+                    ele.history[ele.history.length - 1].status === "collected"
+                ).length >= numOfAllowedBooks
+              ) {
                 this.props.handleSnackbarOpen("Request Limit Exceeded.");
               } else {
                 db.collection("Requests")
