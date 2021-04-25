@@ -7,6 +7,7 @@ import Profile from "./Profile";
 import Library from "./Library";
 import Drawer from "./Drawer";
 import Inventory from "./Inventory";
+import Requests from "./Requests";
 import "./stylesheets/Homepage.css";
 
 class Homepage extends Component {
@@ -69,12 +70,13 @@ class Homepage extends Component {
           handleChangeFocus={this.handleChangeFocus}
           handleDrawerOpen={this.handleDrawerOpen}
         />
-        {this.state.componentInFocus === "Library" && (
-          <Library
-            user={this.props.user}
-            handleSnackbarOpen={this.handleSnackbarOpen}
-          />
-        )}
+        {this.state.componentInFocus === "Library" &&
+          !this.props.isUserAdmin && (
+            <Library
+              user={this.props.user}
+              handleSnackbarOpen={this.handleSnackbarOpen}
+            />
+          )}
         {this.state.componentInFocus === "Profile" && (
           <Profile
             handleChangeFocus={this.handleChangeFocus}
@@ -83,9 +85,14 @@ class Homepage extends Component {
             handleSnackbarOpen={this.handleSnackbarOpen}
           />
         )}
-        {this.state.componentInFocus === "Inventory" && (
-          <Inventory handleSnackbarOpen={this.handleSnackbarOpen} />
-        )}
+        {this.state.componentInFocus === "Inventory" &&
+          this.props.isUserAdmin && (
+            <Inventory handleSnackbarOpen={this.handleSnackbarOpen} />
+          )}
+        {this.state.componentInFocus === "Requests" &&
+          this.props.isUserAdmin && (
+            <Requests handleSnackbarOpen={this.handleSnackbarOpen} />
+          )}
         <Drawer
           isDrawerOpen={this.state.isDrawerOpen}
           handleDrawerClose={this.handleDrawerClose}

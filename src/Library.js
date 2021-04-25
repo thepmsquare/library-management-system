@@ -123,7 +123,14 @@ class Library extends Component {
                   .add({
                     userID: this.props.user.uid,
                     bookID: this.state.requestId,
-                    status: "pending",
+                    history: [
+                      {
+                        status: "pending",
+                        time: firebase.firestore.Timestamp.fromDate(
+                          new Date(Date.now())
+                        ),
+                      },
+                    ],
                   })
                   .then(() => {
                     this.handleDialogClose();
