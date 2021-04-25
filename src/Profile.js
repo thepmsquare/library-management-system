@@ -55,7 +55,9 @@ class Profile extends Component {
   };
 
   handleChangeFocus = () => {
-    this.props.handleChangeFocus("Library");
+    this.props.handleChangeFocus(
+      this.props.isUserAdmin ? "Inventory" : "Library"
+    );
   };
 
   handleInputChange = (e) => {
@@ -269,7 +271,9 @@ class Profile extends Component {
     return (
       <div className="Profile">
         <div className="Profile-BackButtonContainer">
-          <Button onClick={this.handleChangeFocus}>Back to Library</Button>
+          <Button onClick={this.handleChangeFocus}>
+            Back to {this.props.isUserAdmin ? "Inventory" : "Library"}
+          </Button>
         </div>
 
         <div>
