@@ -28,6 +28,7 @@ class Library extends Component {
     super(props);
     this.state = {
       library: [],
+      dontShow: [],
       isRequestDialogOpen: false,
       requestId: "",
     };
@@ -36,39 +37,51 @@ class Library extends Component {
   componentDidMount = () => {
     this.unSubInventory = db
       .collection("Inventory")
+      .where("quantity", ">", 0)
       .onSnapshot((querySnapshot) => {
         let library = [];
         querySnapshot.forEach(async (doc) => {
-          // this is to prevent display of books which are not in inventory.
-          if (doc.data().quantity > 0) {
-            const url =
-              "https://www.googleapis.com/books/v1/volumes/" + doc.data().id;
-            try {
-              const result = await fetch(url);
-              const apiData = await result.json();
-              if (apiData) {
-                library.push({
-                  ...apiData,
-                  quantity: doc.data().quantity,
-                  price: doc.data().price,
-                });
-                this.setState(() => {
-                  return { library };
-                });
-              } else {
-                // this error will not occur unless googleapi deletes a book id.
-                this.props.handleSnackbarOpen("Book Id not found.");
-              }
-            } catch (error) {
-              this.props.handleSnackbarOpen(error.message);
+          const url =
+            "https://www.googleapis.com/books/v1/volumes/" + doc.data().id;
+          try {
+            const result = await fetch(url);
+            const apiData = await result.json();
+            if (apiData) {
+              library.push({
+                ...apiData,
+                quantity: doc.data().quantity,
+                price: doc.data().price,
+              });
+              this.setState(() => {
+                return { library };
+              });
+            } else {
+              // this error will not occur unless googleapi deletes a book id.
+              this.props.handleSnackbarOpen("Book Id not found.");
             }
+          } catch (error) {
+            this.props.handleSnackbarOpen(error.message);
           }
+        });
+      });
+    this.unSubDontShow = db
+      .collection("Requests")
+      .where("userID", "==", this.props.user.uid)
+      .where("status", "in", ["pending", "approved", "collected"])
+      .onSnapshot((querySnapshot2) => {
+        let dontShow = [];
+        querySnapshot2.forEach((doc) => dontShow.push(doc.data().bookID));
+        this.setState(() => {
+          return {
+            dontShow,
+          };
         });
       });
   };
 
   componentWillUnmount = () => {
     this.unSubInventory();
+    this.unSubDontShow();
   };
 
   handleDialogClose = () => {
@@ -110,22 +123,26 @@ class Library extends Component {
                   .add({
                     userID: this.props.user.uid,
                     bookID: this.state.requestId,
+                    status: "pending",
                   })
                   .then(() => {
                     this.handleDialogClose();
                     this.props.handleSnackbarOpen("Request Sent to Admin.");
                   })
                   .catch((error) => {
+                    this.handleDialogClose();
                     this.props.handleSnackbarOpen(error.message);
                   });
               }
             })
             .catch((error) => {
+              this.handleDialogClose();
               this.props.handleSnackbarOpen(error.message);
             });
         }
       })
       .catch((error) => {
+        this.handleDialogClose();
         this.props.handleSnackbarOpen(error.message);
       });
   };
@@ -150,46 +167,51 @@ class Library extends Component {
               <TableBody>
                 {this.state.library.map((book) => {
                   return (
-                    <TableRow key={book.id}>
-                      <TableCell>
-                        <img
-                          src={
-                            book.volumeInfo.imageLinks
-                              ? book.volumeInfo.imageLinks.thumbnail
-                              : defaultBook
-                          }
-                          alt={book.title}
-                        ></img>
-                      </TableCell>
-                      <TableCell>
-                        {book.volumeInfo.title ? book.volumeInfo.title : ""}
-                      </TableCell>
-                      <TableCell>
-                        {book.volumeInfo.authors
-                          ? book.volumeInfo.authors.join(", ")
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        {book.volumeInfo.publisher
-                          ? book.volumeInfo.publisher
-                          : ""}
-                      </TableCell>
-                      <TableCell>
-                        {book.volumeInfo.publishedDate
-                          ? book.volumeInfo.publishedDate
-                          : ""}
-                      </TableCell>
+                    this.state.dontShow.indexOf(book.id) === -1 && (
+                      <TableRow key={book.id}>
+                        <TableCell>
+                          <img
+                            src={
+                              book.volumeInfo.imageLinks
+                                ? book.volumeInfo.imageLinks.thumbnail
+                                : defaultBook
+                            }
+                            alt={book.title}
+                          ></img>
+                        </TableCell>
+                        <TableCell>
+                          {book.volumeInfo.title ? book.volumeInfo.title : ""}
+                        </TableCell>
+                        <TableCell>
+                          {book.volumeInfo.authors
+                            ? book.volumeInfo.authors.join(", ")
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {book.volumeInfo.publisher
+                            ? book.volumeInfo.publisher
+                            : ""}
+                        </TableCell>
+                        <TableCell>
+                          {book.volumeInfo.publishedDate
+                            ? book.volumeInfo.publishedDate
+                            : ""}
+                        </TableCell>
 
-                      <TableCell>
-                        <IconButton
-                          onClick={() => {
-                            this.handleRequestDialogOpen(book.id);
-                          }}
-                        >
-                          <AddIcon />
-                        </IconButton>
-                      </TableCell>
-                    </TableRow>
+                        <TableCell>
+                          <IconButton
+                            onClick={() => {
+                              this.handleRequestDialogOpen(book.id);
+                            }}
+                            disabled={
+                              this.state.dontShow.length >= numOfAllowedBooks
+                            }
+                          >
+                            <AddIcon />
+                          </IconButton>
+                        </TableCell>
+                      </TableRow>
+                    )
                   );
                 })}
               </TableBody>

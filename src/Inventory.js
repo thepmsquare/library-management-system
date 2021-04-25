@@ -53,7 +53,6 @@ class Inventory extends Component {
   componentDidMount = () => {
     this.unsubInventoryListener = db
       .collection("Inventory")
-
       .onSnapshot((querySnapshot) => {
         let inventory = [];
         querySnapshot.forEach(async (doc) => {
@@ -186,13 +185,14 @@ class Inventory extends Component {
         const docs = [];
         querySnapshot.forEach((doc) => docs.push(doc));
         if (docs.length > 0) {
+          this.handleDialogClose();
           this.props.handleSnackbarOpen("Duplicate Item.");
         } else {
           db.collection("Inventory")
             .add({
               id: this.state.addId,
-              quantity: this.state.addQuantity,
-              price: this.state.addPrice,
+              quantity: parseInt(this.state.addQuantity),
+              price: parseFloat(this.state.addPrice),
             })
             .then(() => {
               this.setState(
@@ -216,11 +216,13 @@ class Inventory extends Component {
               );
             })
             .catch((error) => {
+              this.handleDialogClose();
               this.props.handleSnackbarOpen(error.message);
             });
         }
       })
       .catch((error) => {
+        this.handleDialogClose();
         this.props.handleSnackbarOpen(error.message);
       });
   };
@@ -245,8 +247,8 @@ class Inventory extends Component {
         if (docs.length > 0) {
           docs[0]
             .update({
-              quantity: this.state.editQuantity,
-              price: this.state.editPrice,
+              quantity: parseInt(this.state.editQuantity),
+              price: parseFloat(this.state.editPrice),
             })
             .then(() => {
               this.setState(
@@ -264,14 +266,17 @@ class Inventory extends Component {
               );
             })
             .catch((error) => {
+              this.handleDialogClose();
               this.props.handleSnackbarOpen(error.message);
             });
         } else {
+          this.handleDialogClose();
           // will not occur.
           this.props.handleSnackbarOpen("Unexpected Error.");
         }
       })
       .catch((error) => {
+        this.handleDialogClose();
         this.props.handleSnackbarOpen(error.message);
       });
   };
@@ -308,10 +313,12 @@ class Inventory extends Component {
             );
           })
           .catch((error) => {
+            this.handleDialogClose();
             this.props.handleSnackbarOpen(error.message);
           });
       })
       .catch((error) => {
+        this.handleDialogClose();
         this.props.handleSnackbarOpen(error.message);
       });
   };
