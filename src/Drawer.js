@@ -9,6 +9,7 @@ import {
 import StorageIcon from "@material-ui/icons/Storage";
 import StoreIcon from "@material-ui/icons/Store";
 import PlaylistAddCheckIcon from "@material-ui/icons/PlaylistAddCheck";
+import HistoryIcon from "@material-ui/icons/History";
 
 class Drawer extends Component {
   handleInventoryClick = () => {
@@ -20,10 +21,17 @@ class Drawer extends Component {
     this.props.handleChangeFocus("Library");
     this.props.handleDrawerClose();
   };
+
   handleRequestsClick = () => {
     this.props.handleChangeFocus("Requests");
     this.props.handleDrawerClose();
   };
+
+  handleHistoryClick = () => {
+    this.props.handleChangeFocus("History");
+    this.props.handleDrawerClose();
+  };
+
   render = () => {
     return (
       <MUIDrawer
@@ -59,6 +67,14 @@ class Drawer extends Component {
                 <PlaylistAddCheckIcon />
               </ListItemIcon>
               <ListItemText primary="Requests" />
+            </ListItem>
+          )}
+          {!this.props.isUserAdmin && (
+            <ListItem button key="History" onClick={this.handleHistoryClick}>
+              <ListItemIcon>
+                <HistoryIcon />
+              </ListItemIcon>
+              <ListItemText primary="History" />
             </ListItem>
           )}
         </List>

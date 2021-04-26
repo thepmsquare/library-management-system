@@ -8,6 +8,7 @@ import Library from "./Library";
 import Drawer from "./Drawer";
 import Inventory from "./Inventory";
 import Requests from "./Requests";
+import History from "./History";
 import "./stylesheets/Homepage.css";
 
 class Homepage extends Component {
@@ -92,6 +93,13 @@ class Homepage extends Component {
         {this.state.componentInFocus === "Requests" &&
           this.props.isUserAdmin && (
             <Requests handleSnackbarOpen={this.handleSnackbarOpen} />
+          )}
+        {this.state.componentInFocus === "History" &&
+          !this.props.isUserAdmin && (
+            <History
+              handleSnackbarOpen={this.handleSnackbarOpen}
+              user={this.props.user}
+            />
           )}
         <Drawer
           isDrawerOpen={this.state.isDrawerOpen}
