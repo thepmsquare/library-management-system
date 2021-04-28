@@ -21,7 +21,7 @@ class UserNotifications extends Component {
     this.unSubNotifications = db
       .collection("Notifications")
       .where("userID", "==", this.props.user.uid)
-      .orderBy("time")
+      .orderBy("time", "desc")
       .onSnapshot((querySnapshot) => {
         const notifications = [];
         querySnapshot.forEach((doc) => notifications.push(doc.data()));
