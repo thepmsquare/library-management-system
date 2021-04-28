@@ -30,6 +30,9 @@ class Requests extends Component {
       isApproveRejectDialogOpen: false,
       toApproveReject: {},
       approveRejectReason: "",
+      isCollectCancelDialogOpen: false,
+      toCollectCancel: {},
+      collectCancelReason: "",
     };
   }
 
@@ -54,8 +57,7 @@ class Requests extends Component {
               const apiData = await result.json();
               requests.push({
                 title: apiData.volumeInfo.title,
-                bookID: doc.data().bookID,
-                userID: doc.data().userID,
+                ...doc.data(),
                 status,
               });
               this.setState(() => {
@@ -85,6 +87,9 @@ class Requests extends Component {
         isApproveRejectDialogOpen: false,
         toApproveReject: {},
         approveRejectReason: "",
+        isCollectCancelDialogOpen: false,
+        toCollectCancel: {},
+        collectCancelReason: "",
       };
     });
   };
@@ -274,6 +279,98 @@ class Requests extends Component {
       });
   };
 
+  getDays = (date1, date2) => {
+    const diffTime = Math.abs(date2 - date1);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  handleCollectCancelDialogOpen = (bookID, userID, title) => {
+    this.setState(() => {
+      return {
+        isCollectCancelDialogOpen: true,
+        toCollectCancel: { bookID, userID, title },
+      };
+    });
+  };
+
+  handleCollectCancel = (e) => {
+    e.preventDefault();
+    db.collection("Requests")
+      .where("userID", "==", this.state.toCollectCancel.userID)
+      .where("bookID", "==", this.state.toCollectCancel.bookID)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            docs.push(doc.ref);
+          }
+        });
+        docs[0]
+          .update({
+            history: firebase.firestore.FieldValue.arrayUnion({
+              status: "canceled",
+              time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
+            }),
+          })
+          .then(
+            db
+              .collection("Notifications")
+              .add({
+                userID: this.state.toCollectCancel.userID,
+                message: `${this.state.toCollectCancel.title} has been canceled by Admin for you to borrow for the following reason: ${this.state.collectCancelReason}`,
+                time: firebase.firestore.Timestamp.fromDate(
+                  new Date(Date.now())
+                ),
+              })
+              .then(() => {
+                db.collection("Inventory")
+                  .where("id", "==", this.state.toCollectCancel.bookID)
+                  .get()
+                  .then((querySnapshot2) => {
+                    const docs2 = [];
+                    querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+                    docs2[0]
+                      .update({
+                        quantity: firebase.firestore.FieldValue.increment(1),
+                      })
+                      .then(() => {
+                        this.props.handleSnackbarOpen(
+                          `${this.state.toCollectCancel.title} canceled for ${this.state.toCollectCancel.userID}.`
+                        );
+                        this.handleDialogClose();
+                      })
+                      .catch((error) => {
+                        this.props.handleSnackbarOpen(error.message);
+                      });
+                  })
+                  .catch((error) => {
+                    this.props.handleSnackbarOpen(error.message);
+                  });
+              })
+              .catch((error) => {
+                this.handleDialogClose();
+                this.props.handleSnackbarOpen(error.message);
+              })
+          )
+          .catch((error) => {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen(error.message);
+          });
+      })
+      .catch((error) => {
+        this.handleDialogClose();
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
   render = () => {
     return (
       <div className="Requests">
@@ -351,6 +448,8 @@ class Requests extends Component {
                     <TableCell>Book Title</TableCell>
                     <TableCell>User ID</TableCell>
                     <TableCell>Status</TableCell>
+                    <TableCell>Approved on</TableCell>
+                    <TableCell></TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
@@ -364,6 +463,19 @@ class Requests extends Component {
                           <TableCell>{request.userID}</TableCell>
                           <TableCell>
                             {this.toTitleCase(request.status)}
+                          </TableCell>
+                          <TableCell>
+                            {"(" +
+                              this.getDays(
+                                request.history[
+                                  request.history.length - 1
+                                ].time.toDate(),
+                                new Date(Date.now())
+                              ) +
+                              " Days ago) "}
+                            {request.history[request.history.length - 1].time
+                              .toDate()
+                              .toLocaleDateString()}
                           </TableCell>
                           <TableCell>
                             <IconButton
@@ -381,7 +493,7 @@ class Requests extends Component {
                           </TableCell>
                           <TableCell>
                             <IconButton
-                              color="primary"
+                              color="secondary"
                               onClick={() => {
                                 this.handleCollectCancelDialogOpen(
                                   request.bookID,
@@ -390,7 +502,7 @@ class Requests extends Component {
                                 );
                               }}
                             >
-                              <CheckIcon />
+                              <CloseIcon />
                             </IconButton>
                           </TableCell>
                         </TableRow>
@@ -474,6 +586,40 @@ class Requests extends Component {
               </Button>
               <Button type="submit" color="secondary">
                 Reject
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+
+        <Dialog
+          open={this.state.isCollectCancelDialogOpen}
+          onClose={this.handleDialogClose}
+        >
+          <form onSubmit={this.handleCollectCancel}>
+            <DialogTitle>Confirm Cancelation.</DialogTitle>
+            <DialogContent>
+              <Typography variant="h6">
+                Title: {this.state.toCollectCancel.title}{" "}
+              </Typography>
+              <Typography>
+                User ID: {this.state.toCollectCancel.userID}{" "}
+              </Typography>
+
+              <TextField
+                value={this.state.collectCancelReason}
+                name="collectCancelReason"
+                onChange={this.handleInputChange}
+                label="Reason"
+                multiline
+                required
+              ></TextField>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleDialogClose} color="primary">
+                Back
+              </Button>
+              <Button type="submit" color="secondary">
+                Cancel
               </Button>
             </DialogActions>
           </form>

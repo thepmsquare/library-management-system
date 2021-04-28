@@ -211,7 +211,7 @@ class History extends Component {
                 querySnapshot2.forEach((doc) => docs2.push(doc.ref));
                 docs2[0]
                   .update({
-                    quantity: firebase.firestore.FieldValue.increment(-1),
+                    quantity: firebase.firestore.FieldValue.increment(1),
                   })
                   .then(() => {
                     this.props.handleSnackbarOpen(
@@ -396,7 +396,7 @@ class History extends Component {
           onClose={this.handleDialogClose}
         >
           <form onSubmit={this.handleApproveCancel}>
-            <DialogTitle>Confirm Cancellation.</DialogTitle>
+            <DialogTitle>Confirm Cancelation.</DialogTitle>
             <DialogContent>
               <Typography>
                 Title:{" "}
@@ -421,7 +421,7 @@ class History extends Component {
           onClose={this.handleDialogClose}
         >
           <form onSubmit={this.handleCollectCancel}>
-            <DialogTitle>Confirm Cancellation.</DialogTitle>
+            <DialogTitle>Confirm Cancelation.</DialogTitle>
             <DialogContent>
               <Typography>
                 Title:{" "}
