@@ -9,6 +9,7 @@ import Drawer from "./Drawer";
 import Inventory from "./Inventory";
 import Requests from "./Requests";
 import History from "./History";
+import UserNotifications from "./UserNotifications";
 import "./stylesheets/Homepage.css";
 
 class Homepage extends Component {
@@ -93,6 +94,13 @@ class Homepage extends Component {
         {this.state.componentInFocus === "Requests" &&
           this.props.isUserAdmin && (
             <Requests handleSnackbarOpen={this.handleSnackbarOpen} />
+          )}
+        {this.state.componentInFocus === "UserNotifications" &&
+          !this.props.isUserAdmin && (
+            <UserNotifications
+              handleSnackbarOpen={this.handleSnackbarOpen}
+              user={this.props.user}
+            />
           )}
         {this.state.componentInFocus === "History" &&
           !this.props.isUserAdmin && (
