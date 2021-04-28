@@ -10,6 +10,11 @@
   justify-content: space-between;
 }
 
+.Profile-AccordionContainer {
+  width: 90vw;
+  margin: 0 auto;
+}
+
 .Profile-AccordionForm {
   display: flex;
   flex-direction: column;

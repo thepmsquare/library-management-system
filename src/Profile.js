@@ -276,7 +276,7 @@ class Profile extends Component {
           </Button>
         </div>
 
-        <div>
+        <div className="Profile-AccordionContainer">
           <Accordion
             expanded={this.state.isChangeDisplayNameExpanded}
             onChange={this.handleChangeDisplayNameExpandedToggle}
