@@ -39,22 +39,31 @@ class History extends Component {
       .onSnapshot((querySnapshot) => {
         const requests = [];
         querySnapshot.forEach(async (doc) => {
-          try {
-            const url =
-              "https://www.googleapis.com/books/v1/volumes/" +
-              doc.data().bookID;
-            const result = await fetch(url);
-            const apiData = await result.json();
-            requests.push({
-              title: apiData.volumeInfo.title,
-              ...doc.data(),
-              status: doc.data().history[doc.data().history.length - 1].status,
-            });
-            this.setState(() => {
-              return { requests };
-            });
-          } catch (error) {
-            this.props.handleSnackbarOpen(error.message);
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            try {
+              const url =
+                "https://www.googleapis.com/books/v1/volumes/" +
+                doc.data().bookID;
+              const result = await fetch(url);
+              const apiData = await result.json();
+              requests.push({
+                title: apiData.volumeInfo.title,
+                ...doc.data(),
+                status: doc.data().history[doc.data().history.length - 1]
+                  .status,
+              });
+              this.setState(() => {
+                return { requests };
+              });
+            } catch (error) {
+              this.props.handleSnackbarOpen(error.message);
+            }
           }
         });
       });
@@ -119,7 +128,17 @@ class History extends Component {
       .get()
       .then((querySnapshot) => {
         const docs = [];
-        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            docs.push(doc.ref);
+          }
+        });
         docs[0]
           .update({
             history: firebase.firestore.FieldValue.arrayUnion({
@@ -128,10 +147,10 @@ class History extends Component {
             }),
           })
           .then(() => {
-            this.handleDialogClose();
             this.props.handleSnackbarOpen(
               `Request to borrow ${this.state.toApproveCancel.title} canceled.`
             );
+            this.handleDialogClose();
           })
           .catch((error) => {
             this.handleDialogClose();
@@ -165,7 +184,17 @@ class History extends Component {
       .get()
       .then((querySnapshot) => {
         const docs = [];
-        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            docs.push(doc.ref);
+          }
+        });
         docs[0]
           .update({
             history: firebase.firestore.FieldValue.arrayUnion({
@@ -174,10 +203,31 @@ class History extends Component {
             }),
           })
           .then(() => {
-            this.handleDialogClose();
-            this.props.handleSnackbarOpen(
-              `Request to borrow ${this.state.toApproveCancel.title} canceled.`
-            );
+            db.collection("Inventory")
+              .where("id", "==", this.state.toCollectCancel.bookID)
+              .get()
+              .then((querySnapshot2) => {
+                const docs2 = [];
+                querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+                docs2[0]
+                  .update({
+                    quantity: firebase.firestore.FieldValue.increment(-1),
+                  })
+                  .then(() => {
+                    this.props.handleSnackbarOpen(
+                      `Request to borrow ${this.state.toApproveCancel.title} canceled.`
+                    );
+                    this.handleDialogClose();
+                  })
+                  .catch((error) => {
+                    this.handleDialogClose();
+                    this.props.handleSnackbarOpen(error.message);
+                  });
+              })
+              .catch((error) => {
+                this.handleDialogClose();
+                this.props.handleSnackbarOpen(error.message);
+              });
           })
           .catch((error) => {
             this.handleDialogClose();

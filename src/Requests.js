@@ -39,23 +39,31 @@ class Requests extends Component {
       .onSnapshot((querySnapshot) => {
         const requests = [];
         querySnapshot.forEach(async (doc) => {
-          try {
-            const url =
-              "https://www.googleapis.com/books/v1/volumes/" +
-              doc.data().bookID;
-            const result = await fetch(url);
-            const apiData = await result.json();
-            requests.push({
-              title: apiData.volumeInfo.title,
-              bookID: doc.data().bookID,
-              userID: doc.data().userID,
-              status: doc.data().history[doc.data().history.length - 1].status,
-            });
-            this.setState(() => {
-              return { requests };
-            });
-          } catch (error) {
-            this.props.handleSnackbarOpen(error.message);
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            try {
+              const url =
+                "https://www.googleapis.com/books/v1/volumes/" +
+                doc.data().bookID;
+              const result = await fetch(url);
+              const apiData = await result.json();
+              requests.push({
+                title: apiData.volumeInfo.title,
+                bookID: doc.data().bookID,
+                userID: doc.data().userID,
+                status,
+              });
+              this.setState(() => {
+                return { requests };
+              });
+            } catch (error) {
+              this.props.handleSnackbarOpen(error.message);
+            }
           }
         });
       });
@@ -88,7 +96,17 @@ class Requests extends Component {
       .get()
       .then((querySnapshot) => {
         const docs = [];
-        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            docs.push(doc.ref);
+          }
+        });
         docs[0]
           .update({
             history: firebase.firestore.FieldValue.arrayUnion({
@@ -97,19 +115,37 @@ class Requests extends Component {
             }),
           })
           .then(() => {
-            db.collection("Notifications")
-              .add({
-                userID,
-                message: `${title} has been approved by Admin for you to borrow and is now ready for collection.`,
-                time: firebase.firestore.Timestamp.fromDate(
-                  new Date(Date.now())
-                ),
-                isRead: false,
-              })
-              .then(() => {
-                this.props.handleSnackbarOpen(
-                  `${title} approved for ${userID}.`
-                );
+            db.collection("Inventory")
+              .where("id", "==", bookID)
+              .get()
+              .then((querySnapshot2) => {
+                const docs2 = [];
+                querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+                docs2[0]
+                  .update({
+                    quantity: firebase.firestore.FieldValue.increment(-1),
+                  })
+                  .then(() => {
+                    db.collection("Notifications")
+                      .add({
+                        userID,
+                        message: `${title} has been approved by Admin for you to borrow and is now ready for collection.`,
+                        time: firebase.firestore.Timestamp.fromDate(
+                          new Date(Date.now())
+                        ),
+                      })
+                      .then(() => {
+                        this.props.handleSnackbarOpen(
+                          `${title} approved for ${userID}.`
+                        );
+                      })
+                      .catch((error) => {
+                        this.props.handleSnackbarOpen(error.message);
+                      });
+                  })
+                  .catch((error) => {
+                    this.props.handleSnackbarOpen(error.message);
+                  });
               })
               .catch((error) => {
                 this.props.handleSnackbarOpen(error.message);
@@ -151,7 +187,17 @@ class Requests extends Component {
       .get()
       .then((querySnapshot) => {
         const docs = [];
-        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            docs.push(doc.ref);
+          }
+        });
         docs[0]
           .update({
             history: firebase.firestore.FieldValue.arrayUnion({
@@ -168,7 +214,6 @@ class Requests extends Component {
                 time: firebase.firestore.Timestamp.fromDate(
                   new Date(Date.now())
                 ),
-                isRead: false,
               })
               .then(() => {
                 this.props.handleSnackbarOpen(
@@ -199,7 +244,17 @@ class Requests extends Component {
       .get()
       .then((querySnapshot) => {
         const docs = [];
-        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            docs.push(doc.ref);
+          }
+        });
         docs[0]
           .update({
             history: firebase.firestore.FieldValue.arrayUnion({
@@ -208,28 +263,7 @@ class Requests extends Component {
             }),
           })
           .then(() => {
-            db.collection("Inventory")
-              .where("id", "==", bookID)
-              .get()
-              .then((querySnapshot2) => {
-                const docs2 = [];
-                querySnapshot2.forEach((doc) => docs2.push(doc.ref));
-                docs2[0]
-                  .update({
-                    quantity: firebase.firestore.FieldValue.increment(-1),
-                  })
-                  .then(() => {
-                    this.props.handleSnackbarOpen(
-                      `${title} collected by ${userID}.`
-                    );
-                  })
-                  .catch((error) => {
-                    this.props.handleSnackbarOpen(error.message);
-                  });
-              })
-              .catch((error) => {
-                this.props.handleSnackbarOpen(error.message);
-              });
+            this.props.handleSnackbarOpen(`${title} collected by ${userID}.`);
           })
           .catch((error) => {
             this.props.handleSnackbarOpen(error.message);
@@ -336,6 +370,20 @@ class Requests extends Component {
                               color="primary"
                               onClick={() => {
                                 this.handleCollectAccept(
+                                  request.bookID,
+                                  request.userID,
+                                  request.title
+                                );
+                              }}
+                            >
+                              <CheckIcon />
+                            </IconButton>
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              color="primary"
+                              onClick={() => {
+                                this.handleCollectCancelDialogOpen(
                                   request.bookID,
                                   request.userID,
                                   request.title
