@@ -26,6 +26,9 @@ class History extends Component {
     this.state = {
       requests: [],
       isApproveCancelDialogOpen: false,
+      toApproveCancel: {},
+      isCollectCancelDialogOpen: false,
+      toCollectCancel: {},
     };
   }
 
@@ -89,6 +92,8 @@ class History extends Component {
       return {
         isApproveCancelDialogOpen: false,
         toApproveCancel: {},
+        isCollectCancelDialogOpen: false,
+        toCollectCancel: {},
       };
     });
   };
@@ -111,6 +116,52 @@ class History extends Component {
     db.collection("Requests")
       .where("bookID", "==", this.state.toApproveCancel.bookID)
       .where("userID", "==", this.state.toApproveCancel.userID)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        docs[0]
+          .update({
+            history: firebase.firestore.FieldValue.arrayUnion({
+              status: "canceled",
+              time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
+            }),
+          })
+          .then(() => {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen(
+              `Request to borrow ${this.state.toApproveCancel.title} canceled.`
+            );
+          })
+          .catch((error) => {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen(error.message);
+          });
+      })
+      .catch((error) => {
+        this.handleDialogClose();
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
+  handleCollectCancelDialogOpen = (bookID, userID, title) => {
+    this.setState(() => {
+      return {
+        toCollectCancel: {
+          bookID,
+          userID,
+          title,
+        },
+        isCollectCancelDialogOpen: true,
+      };
+    });
+  };
+
+  handleCollectCancel = (e) => {
+    e.preventDefault();
+    db.collection("Requests")
+      .where("bookID", "==", this.state.toCollectCancel.bookID)
+      .where("userID", "==", this.state.toCollectCancel.userID)
       .get()
       .then((querySnapshot) => {
         const docs = [];
@@ -215,7 +266,16 @@ class History extends Component {
                             {this.toTitleCase(request.status)}
                           </TableCell>
                           <TableCell>
-                            <IconButton color="secondary">
+                            <IconButton
+                              color="secondary"
+                              onClick={() => {
+                                this.handleCollectCancelDialogOpen(
+                                  request.bookID,
+                                  request.userID,
+                                  request.title
+                                );
+                              }}
+                            >
                               <CloseIcon />
                             </IconButton>
                           </TableCell>
@@ -294,6 +354,31 @@ class History extends Component {
                   this.state.toApproveCancel.title}
               </Typography>
               <Typography>Status: "Pending"</Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleDialogClose} color="primary">
+                Back
+              </Button>
+              <Button type="submit" color="secondary">
+                Cancel
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+
+        <Dialog
+          open={this.state.isCollectCancelDialogOpen}
+          onClose={this.handleDialogClose}
+        >
+          <form onSubmit={this.handleCollectCancel}>
+            <DialogTitle>Confirm Cancellation.</DialogTitle>
+            <DialogContent>
+              <Typography>
+                Title:{" "}
+                {this.state.isCollectCancelDialogOpen &&
+                  this.state.toCollectCancel.title}
+              </Typography>
+              <Typography>Status: "Approved"</Typography>
             </DialogContent>
             <DialogActions>
               <Button onClick={this.handleDialogClose} color="primary">

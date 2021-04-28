@@ -192,6 +192,54 @@ class Requests extends Component {
       });
   };
 
+  handleCollectAccept = (bookID, userID, title) => {
+    db.collection("Requests")
+      .where("bookID", "==", bookID)
+      .where("userID", "==", userID)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        docs[0]
+          .update({
+            history: firebase.firestore.FieldValue.arrayUnion({
+              status: "collected",
+              time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
+            }),
+          })
+          .then(() => {
+            db.collection("Inventory")
+              .where("id", "==", bookID)
+              .get()
+              .then((querySnapshot2) => {
+                const docs2 = [];
+                querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+                docs2[0]
+                  .update({
+                    quantity: firebase.firestore.FieldValue.increment(-1),
+                  })
+                  .then(() => {
+                    this.props.handleSnackbarOpen(
+                      `${title} collected by ${userID}.`
+                    );
+                  })
+                  .catch((error) => {
+                    this.props.handleSnackbarOpen(error.message);
+                  });
+              })
+              .catch((error) => {
+                this.props.handleSnackbarOpen(error.message);
+              });
+          })
+          .catch((error) => {
+            this.props.handleSnackbarOpen(error.message);
+          });
+      })
+      .catch((error) => {
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
   render = () => {
     return (
       <div className="Requests">
@@ -270,7 +318,6 @@ class Requests extends Component {
                     <TableCell>User ID</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell></TableCell>
-                    <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -285,13 +332,17 @@ class Requests extends Component {
                             {this.toTitleCase(request.status)}
                           </TableCell>
                           <TableCell>
-                            <IconButton color="primary">
+                            <IconButton
+                              color="primary"
+                              onClick={() => {
+                                this.handleCollectAccept(
+                                  request.bookID,
+                                  request.userID,
+                                  request.title
+                                );
+                              }}
+                            >
                               <CheckIcon />
-                            </IconButton>
-                          </TableCell>
-                          <TableCell>
-                            <IconButton color="secondary">
-                              <CloseIcon />
                             </IconButton>
                           </TableCell>
                         </TableRow>
