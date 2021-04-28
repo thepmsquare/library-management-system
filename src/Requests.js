@@ -33,6 +33,8 @@ class Requests extends Component {
       isCollectCancelDialogOpen: false,
       toCollectCancel: {},
       collectCancelReason: "",
+      isReturnConfirmDialogOpen: false,
+      toReturnConfirm: {},
     };
   }
 
@@ -90,6 +92,8 @@ class Requests extends Component {
         isCollectCancelDialogOpen: false,
         toCollectCancel: {},
         collectCancelReason: "",
+        isReturnConfirmDialogOpen: false,
+        toReturnConfirm: {},
       };
     });
   };
@@ -371,6 +375,93 @@ class Requests extends Component {
       });
   };
 
+  getFine = (date1, date2) => {
+    const diffDays = this.getDays(date1, date2);
+    if (diffDays <= 7) {
+      return 0;
+    } else if (diffDays <= 14) {
+      return 10;
+    } else if (diffDays <= 21) {
+      return 20;
+    } else if (diffDays <= 28) {
+      return 30;
+    } else {
+      return 30;
+    }
+  };
+
+  handleReturnConfirmDialogOpen = (bookID, userID, title, history) => {
+    this.setState(() => {
+      return {
+        isReturnConfirmDialogOpen: true,
+        toReturnConfirm: { bookID, userID, title, history },
+      };
+    });
+  };
+
+  handleReturnConfirm = (e) => {
+    e.preventDefault();
+    db.collection("Requests")
+      .where("userID", "==", this.state.toReturnConfirm.userID)
+      .where("bookID", "==", this.state.toReturnConfirm.bookID)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (
+            status === "pending" ||
+            status === "approved" ||
+            status === "collected"
+          ) {
+            docs.push(doc.ref);
+          }
+        });
+        docs[0]
+          .update({
+            history: firebase.firestore.FieldValue.arrayUnion({
+              status: "returned",
+              time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
+            }),
+          })
+          .then(
+            db
+              .collection("Inventory")
+              .where("id", "==", this.state.toReturnConfirm.bookID)
+              .get()
+              .then((querySnapshot2) => {
+                const docs2 = [];
+                querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+                docs2[0]
+                  .update({
+                    quantity: firebase.firestore.FieldValue.increment(1),
+                  })
+                  .then(() => {
+                    this.props.handleSnackbarOpen(
+                      `${this.state.toReturnConfirm.title} returned by ${this.state.toReturnConfirm.userID}.`
+                    );
+                    this.handleDialogClose();
+                  })
+                  .catch((error) => {
+                    this.props.handleSnackbarOpen(error.message);
+                  });
+              })
+              .catch((error) => {
+                this.props.handleSnackbarOpen(error.message);
+              })
+          )
+          .catch((error) => {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen(error.message);
+          });
+      })
+      .catch((error) => {
+        this.handleDialogClose();
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
   render = () => {
     return (
       <div className="Requests">
@@ -524,7 +615,8 @@ class Requests extends Component {
                     <TableCell>Book Title</TableCell>
                     <TableCell>User ID</TableCell>
                     <TableCell>Status</TableCell>
-                    <TableCell></TableCell>
+                    <TableCell>Due Date</TableCell>
+                    <TableCell>Late Fees</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
@@ -540,13 +632,34 @@ class Requests extends Component {
                             {this.toTitleCase(request.status)}
                           </TableCell>
                           <TableCell>
-                            <IconButton color="primary">
-                              <CheckIcon />
-                            </IconButton>
+                            {new Date(
+                              request.history[request.history.length - 1].time
+                                .toDate()
+                                .getTime() +
+                                7 * 24 * 60 * 60 * 1000
+                            ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
-                            <IconButton color="secondary">
-                              <CloseIcon />
+                            {this.getFine(
+                              request.history[
+                                request.history.length - 1
+                              ].time.toDate(),
+                              new Date(Date.now())
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <IconButton
+                              color="primary"
+                              onClick={() => {
+                                this.handleReturnConfirmDialogOpen(
+                                  request.bookID,
+                                  request.userID,
+                                  request.title,
+                                  request.history
+                                );
+                              }}
+                            >
+                              <CheckIcon />
                             </IconButton>
                           </TableCell>
                         </TableRow>
@@ -620,6 +733,40 @@ class Requests extends Component {
               </Button>
               <Button type="submit" color="secondary">
                 Cancel
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+
+        <Dialog
+          open={this.state.isReturnConfirmDialogOpen}
+          onClose={this.handleDialogClose}
+        >
+          <form onSubmit={this.handleReturnConfirm}>
+            <DialogTitle>Confirm Return.</DialogTitle>
+            <DialogContent>
+              <Typography>
+                Title:{" "}
+                {this.state.isReturnConfirmDialogOpen &&
+                  this.state.toReturnConfirm.title}
+              </Typography>
+              <Typography>
+                Fine: ₹
+                {this.state.isReturnConfirmDialogOpen &&
+                  this.getFine(
+                    this.state.toReturnConfirm.history[
+                      this.state.toReturnConfirm.history.length - 1
+                    ].time.toDate(),
+                    new Date(Date.now())
+                  )}
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleDialogClose} color="primary">
+                Cancel
+              </Button>
+              <Button type="submit" color="secondary">
+                Confirm
               </Button>
             </DialogActions>
           </form>
