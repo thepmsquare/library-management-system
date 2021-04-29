@@ -604,8 +604,9 @@ class Requests extends Component {
             </TableContainer>
           </div>
         )}
-        {this.state.requests.filter((ele) => ele.status === "collected")
-          .length > 0 && (
+        {this.state.requests.filter(
+          (ele) => ele.status === "collected" || ele.status === "lost"
+        ).length > 0 && (
           <div>
             <Typography variant="h5">Not yet Returned</Typography>
             <TableContainer>

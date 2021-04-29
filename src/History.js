@@ -29,6 +29,8 @@ class History extends Component {
       toApproveCancel: {},
       isCollectCancelDialogOpen: false,
       toCollectCancel: {},
+      isReportLostDialogOpen: false,
+      toReportLost: {},
     };
   }
 
@@ -103,6 +105,8 @@ class History extends Component {
         toApproveCancel: {},
         isCollectCancelDialogOpen: false,
         toCollectCancel: {},
+        isReportLostDialogOpen: false,
+        toReportLost: {},
       };
     });
   };
@@ -228,6 +232,58 @@ class History extends Component {
                 this.handleDialogClose();
                 this.props.handleSnackbarOpen(error.message);
               });
+          })
+          .catch((error) => {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen(error.message);
+          });
+      })
+      .catch((error) => {
+        this.handleDialogClose();
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
+  handleReportLostDialogOpen = (bookID, userID, title) => {
+    this.setState(() => {
+      return {
+        toReportLost: {
+          bookID,
+          userID,
+          title,
+        },
+        isReportLostDialogOpen: true,
+      };
+    });
+  };
+
+  handleReportLost = (e) => {
+    e.preventDefault();
+    db.collection("Requests")
+      .where("bookID", "==", this.state.toReportLost.bookID)
+      .where("userID", "==", this.state.toReportLost.userID)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => {
+          const status = doc.data().history[doc.data().history.length - 1]
+            .status;
+          if (status === "collected") {
+            docs.push(doc.ref);
+          }
+        });
+        docs[0]
+          .update({
+            history: firebase.firestore.FieldValue.arrayUnion({
+              status: "lost",
+              time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
+            }),
+          })
+          .then(() => {
+            this.props.handleSnackbarOpen(
+              `${this.state.toReportLost.title} reported as lost.`
+            );
+            this.handleDialogClose();
           })
           .catch((error) => {
             this.handleDialogClose();
@@ -380,7 +436,18 @@ class History extends Component {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button color="secondary">Report Lost</Button>
+                            <Button
+                              color="secondary"
+                              onClick={() => {
+                                this.handleReportLostDialogOpen(
+                                  request.bookID,
+                                  request.userID,
+                                  request.title
+                                );
+                              }}
+                            >
+                              Report Lost
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -436,6 +503,35 @@ class History extends Component {
               </Button>
               <Button type="submit" color="secondary">
                 Cancel
+              </Button>
+            </DialogActions>
+          </form>
+        </Dialog>
+
+        <Dialog
+          open={this.state.isReportLostDialogOpen}
+          onClose={this.handleDialogClose}
+        >
+          <form onSubmit={this.handleReportLost}>
+            <DialogTitle>Report Book as Lost.</DialogTitle>
+            <DialogContent>
+              <Typography>
+                Title:{" "}
+                {this.state.isReportLostDialogOpen &&
+                  this.state.toReportLost.title}
+              </Typography>
+              <Typography>
+                A Fine of ₹30 added with the book MSRP of ₹{} will be charged.
+                All of your current pending requests will be canceled and you
+                will not be able to request more books until the fine is paid.
+              </Typography>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={this.handleDialogClose} color="primary">
+                Cancel
+              </Button>
+              <Button type="submit" color="secondary">
+                Report Lost
               </Button>
             </DialogActions>
           </form>
