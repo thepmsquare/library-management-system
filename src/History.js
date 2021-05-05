@@ -278,6 +278,7 @@ class History extends Component {
               status: "lost",
               time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
             }),
+            isRestocked: false,
           })
           .then(() => {
             this.props.handleSnackbarOpen(

@@ -20,6 +20,8 @@ import {
 import AddIcon from "@material-ui/icons/Add";
 import EditIcon from "@material-ui/icons/Edit";
 import DeleteIcon from "@material-ui/icons/Delete";
+import CheckCircleIcon from "@material-ui/icons/CheckCircle";
+import CancelIcon from "@material-ui/icons/Cancel";
 import BooksAPIKey from "./BooksAPIKey";
 import defaultBook from "./images/defaultBook.png";
 import firebase from "./Firebase";
@@ -47,6 +49,7 @@ class Inventory extends Component {
       editPrice: "",
       isDeleteDialogOpen: false,
       idToBeDeleted: "",
+      lostBooks: {},
     };
   }
 
@@ -79,10 +82,25 @@ class Inventory extends Component {
           }
         });
       });
+    this.unSubRequestListener = db
+      .collection("Requests")
+      .onSnapshot((querySnapshot) => {
+        const lostBooks = [];
+        querySnapshot.forEach((doc) => {
+          let allStatus = doc.data().history.map((ele) => ele.status);
+          if (allStatus.indexOf("lost") !== -1 && !doc.data().isRestocked) {
+            lostBooks.push({ ...doc.data() });
+          }
+        });
+        this.setState(() => {
+          return { lostBooks };
+        });
+      });
   };
 
   componentWillUnmount = () => {
     this.unsubInventoryListener();
+    this.unSubRequestListener();
   };
 
   handleInputChange = (e) => {
@@ -297,20 +315,40 @@ class Inventory extends Component {
       .then((querySnapshot) => {
         const docs = [];
         querySnapshot.forEach((doc) => docs.push(doc.ref));
-        docs[0]
-          .delete()
-          .then(() => {
-            this.setState(
-              () => {
-                return {
-                  isDeleteDialogOpen: false,
-                  idToBeDeleted: "",
-                };
-              },
-              () => {
-                this.props.handleSnackbarOpen("Item successfully deleted!");
-              }
-            );
+        db.collection("Requests")
+          .where("bookID", "==", this.state.idToBeDeleted)
+          .get()
+          .then((querySnapshot2) => {
+            const docs2 = [];
+            querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+            if (docs2.length === 0) {
+              docs[0]
+                .delete()
+                .then(() => {
+                  this.setState(
+                    () => {
+                      return {
+                        isDeleteDialogOpen: false,
+                        idToBeDeleted: "",
+                      };
+                    },
+                    () => {
+                      this.props.handleSnackbarOpen(
+                        "Item successfully deleted!"
+                      );
+                    }
+                  );
+                })
+                .catch((error) => {
+                  this.handleDialogClose();
+                  this.props.handleSnackbarOpen(error.message);
+                });
+            } else {
+              this.handleDialogClose();
+              this.props.handleSnackbarOpen(
+                "Cannot delete item to preserve records."
+              );
+            }
           })
           .catch((error) => {
             this.handleDialogClose();
@@ -319,6 +357,70 @@ class Inventory extends Component {
       })
       .catch((error) => {
         this.handleDialogClose();
+        this.props.handleSnackbarOpen(error.message);
+      });
+  };
+
+  getDays = (date1, date2) => {
+    const diffTime = Math.abs(date2 - date1);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  handleRestock = (seconds, bookID, userID) => {
+    db.collection("Inventory")
+      .where("id", "==", bookID)
+      .get()
+      .then((querySnapshot) => {
+        const docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc.ref));
+        docs[0]
+          .update({
+            quantity: firebase.firestore.FieldValue.increment(1),
+          })
+          .then(() => {
+            db.collection("Requests")
+              .where("bookID", "==", bookID)
+              .where("userID", "==", userID)
+              .get()
+              .then((querySnapshot2) => {
+                const docs2 = [];
+                querySnapshot2.forEach((doc) => {
+                  if (
+                    doc.data().history.find((ele) => ele.status === "lost").time
+                      .seconds === seconds
+                  ) {
+                    docs2.push(doc.ref);
+                  }
+                });
+                docs2[0]
+                  .update({
+                    isRestocked: true,
+                  })
+                  .then(() => {
+                    this.props.handleSnackbarOpen(
+                      `${
+                        this.state.inventory.find((ele) => ele.id === bookID)
+                          .volumeInfo.title
+                      } restocked.`
+                    );
+                  })
+                  .catch((error) => {
+                    this.handleDialogClose();
+                    this.props.handleSnackbarOpen(error.message);
+                  });
+              })
+              .catch((error) => {
+                this.handleDialogClose();
+                this.props.handleSnackbarOpen(error.message);
+              });
+          })
+          .catch((error) => {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen(error.message);
+          });
+      })
+      .catch((error) => {
         this.props.handleSnackbarOpen(error.message);
       });
   };
@@ -498,7 +600,7 @@ class Inventory extends Component {
                       </TableCell>
                       <TableCell>{book.price ? book.price : ""}</TableCell>
                       <TableCell>
-                        {book.quantity ? book.quantity : ""}
+                        {book.quantity > -1 ? book.quantity : ""}
                       </TableCell>
                       <TableCell>
                         <IconButton
@@ -518,6 +620,90 @@ class Inventory extends Component {
                         >
                           <DeleteIcon />
                         </IconButton>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
+        {this.state.lostBooks.length > 0 && (
+          <TableContainer component={Paper}>
+            <Typography variant="h4">Restock lost books</Typography>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Title</TableCell>
+                  <TableCell>Price (₹)</TableCell>
+                  <TableCell>User ID</TableCell>
+                  <TableCell>Reimbursed</TableCell>
+                  <TableCell>Lost Date</TableCell>
+                  <TableCell></TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {this.state.lostBooks.map((lostBook) => {
+                  return (
+                    <TableRow
+                      key={
+                        lostBook.history.find((ele) => ele.status === "lost")
+                          .time.seconds
+                      }
+                    >
+                      <TableCell>
+                        {this.state.inventory.find(
+                          (ele) => ele.id === lostBook.bookID
+                        ) &&
+                          this.state.inventory.find(
+                            (ele) => ele.id === lostBook.bookID
+                          ).volumeInfo.title}
+                      </TableCell>
+                      <TableCell>
+                        {this.state.inventory.find(
+                          (ele) => ele.id === lostBook.bookID
+                        ) &&
+                          this.state.inventory.find(
+                            (ele) => ele.id === lostBook.bookID
+                          ).price}
+                      </TableCell>
+                      <TableCell>{lostBook.userID}</TableCell>
+                      <TableCell>
+                        {lostBook.history[lostBook.history.length - 1]
+                          .status === "returned" ? (
+                          <CheckCircleIcon color="primary" />
+                        ) : (
+                          <CancelIcon color="secondary" />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {"(" +
+                          this.getDays(
+                            lostBook.history
+                              .find((ele) => ele.status === "lost")
+                              .time.toDate(),
+                            new Date(Date.now())
+                          ) +
+                          " Days ago) " +
+                          lostBook.history
+                            .find((ele) => ele.status === "lost")
+                            .time.toDate()
+                            .toLocaleDateString()}
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          onClick={() =>
+                            this.handleRestock(
+                              lostBook.history.find(
+                                (ele) => ele.status === "lost"
+                              ).time.seconds,
+                              lostBook.bookID,
+                              lostBook.userID
+                            )
+                          }
+                        >
+                          Restock
+                        </Button>
                       </TableCell>
                     </TableRow>
                   );
