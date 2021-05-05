@@ -31,6 +31,7 @@ class Library extends Component {
       dontShow: [],
       isRequestDialogOpen: false,
       requestId: "",
+      fineRemaining: false,
     };
   }
 
@@ -64,29 +65,48 @@ class Library extends Component {
           }
         });
       });
+
     this.unSubDontShow = db
       .collection("Requests")
       .where("userID", "==", this.props.user.uid)
-
       .onSnapshot((querySnapshot) => {
         let dontShow = [];
-        querySnapshot.forEach((doc) => {
-          if (
-            doc.data().history[doc.data().history.length - 1].status ===
-              "pending" ||
-            doc.data().history[doc.data().history.length - 1].status ===
-              "approved" ||
-            doc.data().history[doc.data().history.length - 1].status ===
-              "collected"
-          ) {
-            dontShow.push(doc.data().bookID);
-          }
-        });
-        this.setState(() => {
-          return {
-            dontShow,
-          };
-        });
+        let docs = [];
+        querySnapshot.forEach((doc) => docs.push(doc.data()));
+        if (
+          docs.some((ele) => {
+            return (
+              ele.history[ele.history.length - 1].status === "lost" ||
+              (ele.history[ele.history.length - 1].status === "collected" &&
+                this.getDays(
+                  ele.history[ele.history.length - 1].time.toDate(),
+                  new Date(Date.now())
+                ) > 7)
+            );
+          })
+        ) {
+          this.setState(() => {
+            return {
+              fineRemaining: true,
+            };
+          });
+        } else {
+          docs.forEach((doc) => {
+            if (
+              doc.history[doc.history.length - 1].status === "pending" ||
+              doc.history[doc.history.length - 1].status === "approved" ||
+              doc.history[doc.history.length - 1].status === "collected"
+            ) {
+              dontShow.push(doc.bookID);
+            }
+          });
+          this.setState(() => {
+            return {
+              dontShow,
+              fineRemaining: false,
+            };
+          });
+        }
       });
   };
 
@@ -113,57 +133,102 @@ class Library extends Component {
   handleRequest = () => {
     db.collection("Requests")
       .where("userID", "==", this.props.user.uid)
-      .where("bookID", "==", this.state.requestId)
       .get()
       .then((querySnapshot) => {
         const docs = [];
         querySnapshot.forEach((doc) => docs.push(doc.data()));
         if (
-          docs[0] &&
-          (docs[0].history[docs[0].history.length - 1].status === "pending" ||
-            docs[0].history[docs[0].history.length - 1].status === "approved" ||
-            docs[0].history[docs[0].history.length - 1].status === "collected")
+          docs.some((ele) => {
+            return (
+              ele.history[ele.history.length - 1].status === "lost" ||
+              (ele.history[ele.history.length - 1].status === "collected" &&
+                this.getDays(
+                  ele.history[ele.history.length - 1].time.toDate(),
+                  new Date(Date.now())
+                ) > 7)
+            );
+          })
         ) {
-          this.props.handleSnackbarOpen("Book Already Requested");
+          this.handleDialogClose();
+          this.props.handleSnackbarOpen("Please Pay the Fine.");
+        } else if (
+          docs.filter(
+            (ele) =>
+              ele.history[ele.history.length - 1].status === "pending" ||
+              ele.history[ele.history.length - 1].status === "approved" ||
+              ele.history[ele.history.length - 1].status === "collected"
+          ).length >= numOfAllowedBooks
+        ) {
+          this.handleDialogClose();
+          this.props.handleSnackbarOpen("Request Limit Exceeded.");
+        } else if (
+          docs.filter((ele) => ele.bookID === this.state.requestId).length > 0
+        ) {
+          let sameBookUserRequest = docs.filter(
+            (ele) => ele.bookID === this.state.requestId
+          );
+          if (
+            sameBookUserRequest.some(
+              (ele) => ele.history[ele.history.length - 1].status === "pending"
+            )
+          ) {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen("Book Already Requested");
+          } else if (
+            sameBookUserRequest.some(
+              (ele) => ele.history[ele.history.length - 1].status === "approved"
+            )
+          ) {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen("Book is Ready to collect.");
+          } else if (
+            sameBookUserRequest.some(
+              (ele) =>
+                ele.history[ele.history.length - 1].status === "collected"
+            )
+          ) {
+            this.handleDialogClose();
+            this.props.handleSnackbarOpen("Please Return this Book first.");
+          } else {
+            db.collection("Requests")
+              .add({
+                userID: this.props.user.uid,
+                bookID: this.state.requestId,
+                history: [
+                  {
+                    status: "pending",
+                    time: firebase.firestore.Timestamp.fromDate(
+                      new Date(Date.now())
+                    ),
+                  },
+                ],
+              })
+              .then(() => {
+                this.handleDialogClose();
+                this.props.handleSnackbarOpen("Request Sent to Admin.");
+              })
+              .catch((error) => {
+                this.handleDialogClose();
+                this.props.handleSnackbarOpen(error.message);
+              });
+          }
         } else {
           db.collection("Requests")
-            .where("userID", "==", this.props.user.uid)
-            .get()
-            .then((querySnapshot2) => {
-              const docs2 = [];
-              querySnapshot2.forEach((doc) => docs2.push(doc.data()));
-              if (
-                docs2.filter(
-                  (ele) =>
-                    ele.history[ele.history.length - 1].status === "pending" ||
-                    ele.history[ele.history.length - 1].status === "approved" ||
-                    ele.history[ele.history.length - 1].status === "collected"
-                ).length >= numOfAllowedBooks
-              ) {
-                this.props.handleSnackbarOpen("Request Limit Exceeded.");
-              } else {
-                db.collection("Requests")
-                  .add({
-                    userID: this.props.user.uid,
-                    bookID: this.state.requestId,
-                    history: [
-                      {
-                        status: "pending",
-                        time: firebase.firestore.Timestamp.fromDate(
-                          new Date(Date.now())
-                        ),
-                      },
-                    ],
-                  })
-                  .then(() => {
-                    this.handleDialogClose();
-                    this.props.handleSnackbarOpen("Request Sent to Admin.");
-                  })
-                  .catch((error) => {
-                    this.handleDialogClose();
-                    this.props.handleSnackbarOpen(error.message);
-                  });
-              }
+            .add({
+              userID: this.props.user.uid,
+              bookID: this.state.requestId,
+              history: [
+                {
+                  status: "pending",
+                  time: firebase.firestore.Timestamp.fromDate(
+                    new Date(Date.now())
+                  ),
+                },
+              ],
+            })
+            .then(() => {
+              this.handleDialogClose();
+              this.props.handleSnackbarOpen("Request Sent to Admin.");
             })
             .catch((error) => {
               this.handleDialogClose();
@@ -177,11 +242,17 @@ class Library extends Component {
       });
   };
 
+  getDays = (date1, date2) => {
+    const diffTime = Math.abs(date2 - date1);
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
   render = () => {
     return (
       <div className="Library">
         <Typography variant="h3">Library</Typography>
-        {this.state.library.length > 0 && (
+        {this.state.library.length > 0 && !this.state.fineRemaining && (
           <TableContainer component={Paper}>
             <Table>
               <TableHead>
@@ -247,6 +318,11 @@ class Library extends Component {
               </TableBody>
             </Table>
           </TableContainer>
+        )}
+        {this.state.fineRemaining && (
+          <Typography color="secondary" variant="h4">
+            Please Pay the fine.
+          </Typography>
         )}
         <Dialog
           open={this.state.isRequestDialogOpen}
