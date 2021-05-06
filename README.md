@@ -1,4 +1,4 @@
-# Library Management System (WIP)
+# Library Management System
 
 To check out the project...
 
