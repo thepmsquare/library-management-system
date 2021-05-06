@@ -82,19 +82,7 @@ class Requests extends Component {
               this.props.handleSnackbarOpen(error.message);
             }
           }
-          console.log(
-            (status === "collected" &&
-              this.getDays(
-                doc
-                  .data()
-                  .history.find((ele) => {
-                    return ele.status === "collected";
-                  })
-                  .time.toDate(),
-                new Date(Date.now())
-              ) > 7) ||
-              status === "lost"
-          );
+
           if (
             (status === "collected" &&
               this.getDays(
@@ -144,7 +132,7 @@ class Requests extends Component {
   };
 
   handleApproveAccept = (bookID, userID, title) => {
-    if (this.state.fineUsers.indexOf(userID) !== -1) {
+    if (this.state.fineUsers.indexOf(userID) === -1) {
       db.collection("Requests")
         .where("bookID", "==", bookID)
         .where("userID", "==", userID)
@@ -290,7 +278,7 @@ class Requests extends Component {
   };
 
   handleCollectAccept = (bookID, userID, title) => {
-    if (this.state.fineUsers.indexOf(userID) !== -1) {
+    if (this.state.fineUsers.indexOf(userID) === -1) {
       db.collection("Requests")
         .where("bookID", "==", bookID)
         .where("userID", "==", userID)
