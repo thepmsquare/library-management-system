@@ -41,32 +41,39 @@ class History extends Component {
       .onSnapshot((querySnapshot) => {
         const requests = [];
         querySnapshot.forEach(async (doc) => {
-          const status = doc.data().history[doc.data().history.length - 1]
-            .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
-            try {
-              const url =
-                "https://www.googleapis.com/books/v1/volumes/" +
-                doc.data().bookID;
-              const result = await fetch(url);
-              const apiData = await result.json();
-              requests.push({
-                title: apiData.volumeInfo.title,
-                ...doc.data(),
-                status: doc.data().history[doc.data().history.length - 1]
-                  .status,
+          try {
+            const status = doc.data().history[doc.data().history.length - 1]
+              .status;
+            const url =
+              "https://www.googleapis.com/books/v1/volumes/" +
+              doc.data().bookID;
+            const result = await fetch(url);
+            const apiData = await result.json();
+            db.collection("Inventory")
+              .where("id", "==", doc.data().bookID)
+              .get()
+              .then((querySnapshot2) => {
+                const docs2 = [];
+                querySnapshot2.forEach((doc) => docs2.push(doc.data()));
+                requests.push({
+                  price: docs2[0].price,
+                  title: apiData.volumeInfo.title,
+                  ...doc.data(),
+                  status,
+                });
+                this.setState(() => {
+                  return { requests };
+                });
+              })
+              .catch((error) => {
+                this.props.handleSnackbarOpen(error.message);
               });
-              this.setState(() => {
-                return { requests };
-              });
-            } catch (error) {
-              this.props.handleSnackbarOpen(error.message);
-            }
+          } catch (error) {
+            this.props.handleSnackbarOpen(error.message);
           }
+        });
+        this.setState(() => {
+          return { requests };
         });
       });
   };
@@ -81,20 +88,28 @@ class History extends Component {
     });
   };
 
-  getFine = (date1, date2) => {
+  getDays = (date1, date2) => {
     const diffTime = Math.abs(date2 - date1);
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
 
-    if (diffDays <= 7) {
-      return 0;
-    } else if (diffDays <= 14) {
-      return 10;
-    } else if (diffDays <= 21) {
-      return 20;
-    } else if (diffDays <= 28) {
-      return 30;
+  getFine = (date1, date2, price, status) => {
+    if (status === "lost") {
+      return 30 + parseFloat(price);
     } else {
-      return 30;
+      const diffDays = this.getDays(date1, date2);
+      if (diffDays <= 7) {
+        return 0;
+      } else if (diffDays <= 14) {
+        return 10;
+      } else if (diffDays <= 21) {
+        return 20;
+      } else if (diffDays <= 28) {
+        return 30;
+      } else {
+        return 30 + parseFloat(price);
+      }
     }
   };
 
@@ -135,11 +150,7 @@ class History extends Component {
         querySnapshot.forEach((doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
+          if (status === "pending") {
             docs.push(doc.ref);
           }
         });
@@ -191,11 +202,7 @@ class History extends Component {
         querySnapshot.forEach((doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
+          if (status === "approved") {
             docs.push(doc.ref);
           }
         });
@@ -244,13 +251,23 @@ class History extends Component {
       });
   };
 
-  handleReportLostDialogOpen = (bookID, userID, title) => {
+  handleReportLostDialogOpen = (
+    bookID,
+    userID,
+    title,
+    history,
+    status,
+    price
+  ) => {
     this.setState(() => {
       return {
         toReportLost: {
           bookID,
           userID,
           title,
+          history,
+          status,
+          price,
         },
         isReportLostDialogOpen: true,
       };
@@ -395,8 +412,9 @@ class History extends Component {
           </div>
         )}
 
-        {this.state.requests.filter((ele) => ele.status === "collected")
-          .length > 0 && (
+        {this.state.requests.filter(
+          (ele) => ele.status === "collected" || ele.status === "lost"
+        ).length > 0 && (
           <div>
             <Typography variant="h5">Not yet Returned</Typography>
             <TableContainer>
@@ -406,13 +424,16 @@ class History extends Component {
                     <TableCell>Book Title</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Due Date</TableCell>
-                    <TableCell>Late Fees</TableCell>
+                    <TableCell>Fine (₹)</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {this.state.requests
-                    .filter((ele) => ele.status === "collected")
+                    .filter(
+                      (ele) =>
+                        ele.status === "collected" || ele.status === "lost"
+                    )
                     .map((request) => {
                       return (
                         <TableRow key={request.title + request.userID}>
@@ -422,33 +443,45 @@ class History extends Component {
                           </TableCell>
                           <TableCell>
                             {new Date(
-                              request.history[request.history.length - 1].time
-                                .toDate()
+                              request.history
+                                .find((ele) => {
+                                  return ele.status === "collected";
+                                })
+                                .time.toDate()
                                 .getTime() +
                                 7 * 24 * 60 * 60 * 1000
-                            ).toDateString()}
+                            ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
                             {this.getFine(
-                              request.history[
-                                request.history.length - 1
-                              ].time.toDate(),
-                              new Date(Date.now())
+                              request.history
+                                .find((ele) => {
+                                  return ele.status === "collected";
+                                })
+                                .time.toDate(),
+                              new Date(Date.now()),
+                              request.price,
+                              request.status
                             )}
                           </TableCell>
                           <TableCell>
-                            <Button
-                              color="secondary"
-                              onClick={() => {
-                                this.handleReportLostDialogOpen(
-                                  request.bookID,
-                                  request.userID,
-                                  request.title
-                                );
-                              }}
-                            >
-                              Report Lost
-                            </Button>
+                            {request.status === "collected" ? (
+                              <Button
+                                color="secondary"
+                                onClick={() => {
+                                  this.handleReportLostDialogOpen(
+                                    request.bookID,
+                                    request.userID,
+                                    request.title,
+                                    request.history,
+                                    request.status,
+                                    request.price
+                                  );
+                                }}
+                              >
+                                Report Lost
+                              </Button>
+                            ) : null}
                           </TableCell>
                         </TableRow>
                       );
@@ -522,9 +555,22 @@ class History extends Component {
                   this.state.toReportLost.title}
               </Typography>
               <Typography>
-                A Fine of ₹30 added with the book MSRP of ₹{} will be charged.
-                All of your current pending requests will be canceled and you
-                will not be able to request more books until the fine is paid.
+                A Fine of ₹30 added with the book MSRP of ₹
+                {this.state.toReportLost.price} = ₹
+                {this.state.isReportLostDialogOpen &&
+                  this.getFine(
+                    this.state.toReportLost.history
+                      .find((ele) => {
+                        return ele.status === "collected";
+                      })
+                      .time.toDate(),
+                    new Date(Date.now()),
+                    this.state.toReportLost.price,
+                    "lost"
+                  )}{" "}
+                will be charged. All of your current requests will be canceled
+                and you will not be able to request more books until the fine is
+                paid.
               </Typography>
             </DialogContent>
             <DialogActions>
