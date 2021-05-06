@@ -64,6 +64,9 @@ class Library extends Component {
             this.props.handleSnackbarOpen(error.message);
           }
         });
+        this.setState(() => {
+          return { library };
+        });
       });
 
     this.unSubDontShow = db

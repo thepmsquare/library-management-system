@@ -81,6 +81,9 @@ class Inventory extends Component {
             this.props.handleSnackbarOpen(error.message);
           }
         });
+        this.setState(() => {
+          return { inventory };
+        });
       });
     this.unSubRequestListener = db
       .collection("Requests")
