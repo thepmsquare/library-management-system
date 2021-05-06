@@ -581,7 +581,7 @@ class Inventory extends Component {
                               ? book.volumeInfo.imageLinks.thumbnail
                               : defaultBook
                           }
-                          alt={book.title}
+                          alt={book.volumeInfo.title}
                         ></img>
                       </TableCell>
                       <TableCell>
@@ -769,7 +769,8 @@ class Inventory extends Component {
             <DialogTitle>Edit inventory</DialogTitle>
             <DialogContent>
               <DialogContentText>
-                {this.state.isEditDialogOpen
+                {this.state.isEditDialogOpen &&
+                this.state.inventory.find((ele) => ele.id === this.state.editId)
                   ? this.state.inventory.find(
                       (ele) => ele.id === this.state.editId
                     ).volumeInfo.title
