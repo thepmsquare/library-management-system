@@ -43,6 +43,7 @@ class Requests extends Component {
       .collection("Requests")
       .onSnapshot((querySnapshot) => {
         const requests = [];
+        let fineUsers = [];
         querySnapshot.forEach(async (doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
@@ -81,9 +82,38 @@ class Requests extends Component {
               this.props.handleSnackbarOpen(error.message);
             }
           }
+          console.log(
+            (status === "collected" &&
+              this.getDays(
+                doc
+                  .data()
+                  .history.find((ele) => {
+                    return ele.status === "collected";
+                  })
+                  .time.toDate(),
+                new Date(Date.now())
+              ) > 7) ||
+              status === "lost"
+          );
+          if (
+            (status === "collected" &&
+              this.getDays(
+                doc
+                  .data()
+                  .history.find((ele) => {
+                    return ele.status === "collected";
+                  })
+                  .time.toDate(),
+                new Date(Date.now())
+              ) > 7) ||
+            status === "lost"
+          ) {
+            fineUsers.push(doc.data().userID);
+          }
         });
+        fineUsers = [...new Set(fineUsers)];
         this.setState(() => {
-          return { requests };
+          return { requests, fineUsers };
         });
       });
   };
@@ -114,70 +144,76 @@ class Requests extends Component {
   };
 
   handleApproveAccept = (bookID, userID, title) => {
-    db.collection("Requests")
-      .where("bookID", "==", bookID)
-      .where("userID", "==", userID)
-      .get()
-      .then((querySnapshot) => {
-        const docs = [];
-        querySnapshot.forEach((doc) => {
-          const status = doc.data().history[doc.data().history.length - 1]
-            .status;
-          if (status === "pending") {
-            docs.push(doc.ref);
-          }
-        });
-        docs[0]
-          .update({
-            history: firebase.firestore.FieldValue.arrayUnion({
-              status: "approved",
-              time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
-            }),
-          })
-          .then(() => {
-            db.collection("Inventory")
-              .where("id", "==", bookID)
-              .get()
-              .then((querySnapshot2) => {
-                const docs2 = [];
-                querySnapshot2.forEach((doc) => docs2.push(doc.ref));
-                docs2[0]
-                  .update({
-                    quantity: firebase.firestore.FieldValue.increment(-1),
-                  })
-                  .then(() => {
-                    db.collection("Notifications")
-                      .add({
-                        userID,
-                        message: `${title} has been approved by Admin for you to borrow and is now ready for collection.`,
-                        time: firebase.firestore.Timestamp.fromDate(
-                          new Date(Date.now())
-                        ),
-                      })
-                      .then(() => {
-                        this.props.handleSnackbarOpen(
-                          `${title} approved for ${userID}.`
-                        );
-                      })
-                      .catch((error) => {
-                        this.props.handleSnackbarOpen(error.message);
-                      });
-                  })
-                  .catch((error) => {
-                    this.props.handleSnackbarOpen(error.message);
-                  });
-              })
-              .catch((error) => {
-                this.props.handleSnackbarOpen(error.message);
-              });
-          })
-          .catch((error) => {
-            this.props.handleSnackbarOpen(error.message);
+    if (this.state.fineUsers.indexOf(userID) !== -1) {
+      db.collection("Requests")
+        .where("bookID", "==", bookID)
+        .where("userID", "==", userID)
+        .get()
+        .then((querySnapshot) => {
+          const docs = [];
+          querySnapshot.forEach((doc) => {
+            const status = doc.data().history[doc.data().history.length - 1]
+              .status;
+            if (status === "pending") {
+              docs.push(doc.ref);
+            }
           });
-      })
-      .catch((error) => {
-        this.props.handleSnackbarOpen(error.message);
-      });
+          docs[0]
+            .update({
+              history: firebase.firestore.FieldValue.arrayUnion({
+                status: "approved",
+                time: firebase.firestore.Timestamp.fromDate(
+                  new Date(Date.now())
+                ),
+              }),
+            })
+            .then(() => {
+              db.collection("Inventory")
+                .where("id", "==", bookID)
+                .get()
+                .then((querySnapshot2) => {
+                  const docs2 = [];
+                  querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+                  docs2[0]
+                    .update({
+                      quantity: firebase.firestore.FieldValue.increment(-1),
+                    })
+                    .then(() => {
+                      db.collection("Notifications")
+                        .add({
+                          userID,
+                          message: `${title} has been approved by Admin for you to borrow and is now ready for collection.`,
+                          time: firebase.firestore.Timestamp.fromDate(
+                            new Date(Date.now())
+                          ),
+                        })
+                        .then(() => {
+                          this.props.handleSnackbarOpen(
+                            `${title} approved for ${userID}.`
+                          );
+                        })
+                        .catch((error) => {
+                          this.props.handleSnackbarOpen(error.message);
+                        });
+                    })
+                    .catch((error) => {
+                      this.props.handleSnackbarOpen(error.message);
+                    });
+                })
+                .catch((error) => {
+                  this.props.handleSnackbarOpen(error.message);
+                });
+            })
+            .catch((error) => {
+              this.props.handleSnackbarOpen(error.message);
+            });
+        })
+        .catch((error) => {
+          this.props.handleSnackbarOpen(error.message);
+        });
+    } else {
+      this.props.handleSnackbarOpen("User has pending fine.");
+    }
   };
 
   handleApproveRejectDialogOpen = (bookID, userID, title) => {
@@ -254,36 +290,42 @@ class Requests extends Component {
   };
 
   handleCollectAccept = (bookID, userID, title) => {
-    db.collection("Requests")
-      .where("bookID", "==", bookID)
-      .where("userID", "==", userID)
-      .get()
-      .then((querySnapshot) => {
-        const docs = [];
-        querySnapshot.forEach((doc) => {
-          const status = doc.data().history[doc.data().history.length - 1]
-            .status;
-          if (status === "approved") {
-            docs.push(doc.ref);
-          }
-        });
-        docs[0]
-          .update({
-            history: firebase.firestore.FieldValue.arrayUnion({
-              status: "collected",
-              time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
-            }),
-          })
-          .then(() => {
-            this.props.handleSnackbarOpen(`${title} collected by ${userID}.`);
-          })
-          .catch((error) => {
-            this.props.handleSnackbarOpen(error.message);
+    if (this.state.fineUsers.indexOf(userID) !== -1) {
+      db.collection("Requests")
+        .where("bookID", "==", bookID)
+        .where("userID", "==", userID)
+        .get()
+        .then((querySnapshot) => {
+          const docs = [];
+          querySnapshot.forEach((doc) => {
+            const status = doc.data().history[doc.data().history.length - 1]
+              .status;
+            if (status === "approved") {
+              docs.push(doc.ref);
+            }
           });
-      })
-      .catch((error) => {
-        this.props.handleSnackbarOpen(error.message);
-      });
+          docs[0]
+            .update({
+              history: firebase.firestore.FieldValue.arrayUnion({
+                status: "collected",
+                time: firebase.firestore.Timestamp.fromDate(
+                  new Date(Date.now())
+                ),
+              }),
+            })
+            .then(() => {
+              this.props.handleSnackbarOpen(`${title} collected by ${userID}.`);
+            })
+            .catch((error) => {
+              this.props.handleSnackbarOpen(error.message);
+            });
+        })
+        .catch((error) => {
+          this.props.handleSnackbarOpen(error.message);
+        });
+    } else {
+      this.props.handleSnackbarOpen("User has pending fine.");
+    }
   };
 
   getDays = (date1, date2) => {
@@ -507,6 +549,10 @@ class Requests extends Component {
                           <TableCell>
                             <IconButton
                               color="primary"
+                              disabled={
+                                this.state.fineUsers.indexOf(request.userID) !==
+                                -1
+                              }
                               onClick={() => {
                                 this.handleApproveAccept(
                                   request.bookID,
@@ -583,6 +629,10 @@ class Requests extends Component {
                           <TableCell>
                             <IconButton
                               color="primary"
+                              disabled={
+                                this.state.fineUsers.indexOf(request.userID) !==
+                                -1
+                              }
                               onClick={() => {
                                 this.handleCollectAccept(
                                   request.bookID,
