@@ -1,9 +1,0 @@
-- [x] send email verification after register
-- [x] forgot password
-- [x] change display name
-- [x] change email
-- [x] change password
-- [x] delete account
-- [x] (admin) view and change adminKeys
-- [ ] do not delete account if pending transactions.
-- [x] close opened dialogs in case of error.
