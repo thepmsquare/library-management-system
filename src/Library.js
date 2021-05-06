@@ -15,8 +15,11 @@ import {
   DialogContent,
   DialogContentText,
   Button,
+  InputAdornment,
+  TextField,
 } from "@material-ui/core";
 import AddIcon from "@material-ui/icons/Add";
+import SearchIcon from "@material-ui/icons/Search";
 import firebase from "./Firebase";
 import defaultBook from "./images/defaultBook.png";
 import "./stylesheets/Library.css";
@@ -32,6 +35,7 @@ class Library extends Component {
       isRequestDialogOpen: false,
       requestId: "",
       fineRemaining: false,
+      searchValue: "",
     };
   }
 
@@ -251,10 +255,33 @@ class Library extends Component {
     return diffDays;
   };
 
+  handleInputChange = (e) => {
+    const name = e.target.getAttribute("name");
+    const value = e.target.value;
+    this.setState(() => {
+      return {
+        [name]: value,
+      };
+    });
+  };
+
   render = () => {
     return (
       <div className="Library">
         <Typography variant="h3">Library</Typography>
+        <TextField
+          variant="outlined"
+          value={this.state.searchValue}
+          name="searchValue"
+          onChange={this.handleInputChange}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
         {this.state.library.length > 0 && !this.state.fineRemaining && (
           <TableContainer component={Paper}>
             <Table>
@@ -269,55 +296,75 @@ class Library extends Component {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {this.state.library.map((book) => {
-                  return (
-                    this.state.dontShow.indexOf(book.id) === -1 && (
-                      <TableRow key={book.id}>
-                        <TableCell>
-                          <img
-                            src={
-                              book.volumeInfo.imageLinks
-                                ? book.volumeInfo.imageLinks.thumbnail
-                                : defaultBook
-                            }
-                            alt={book.title}
-                          ></img>
-                        </TableCell>
-                        <TableCell>
-                          {book.volumeInfo.title ? book.volumeInfo.title : ""}
-                        </TableCell>
-                        <TableCell>
-                          {book.volumeInfo.authors
-                            ? book.volumeInfo.authors.join(", ")
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {book.volumeInfo.publisher
-                            ? book.volumeInfo.publisher
-                            : ""}
-                        </TableCell>
-                        <TableCell>
-                          {book.volumeInfo.publishedDate
-                            ? book.volumeInfo.publishedDate
-                            : ""}
-                        </TableCell>
+                {this.state.library
+                  .filter((ele) => {
+                    return this.state.searchValue
+                      ? ele.volumeInfo.title
+                          .toLowerCase()
+                          .indexOf(this.state.searchValue.toLowerCase()) !==
+                          -1 ||
+                        (ele.volumeInfo.publisher &&
+                          ele.volumeInfo.publisher
+                            .toLowerCase()
+                            .indexOf(this.state.searchValue.toLowerCase()) !==
+                            -1) ||
+                        ele.volumeInfo.authors
+                          .join(" ")
+                          .toLowerCase()
+                          .indexOf(this.state.searchValue.toLowerCase()) !== -1
+                        ? true
+                        : false
+                      : true;
+                  })
+                  .map((book) => {
+                    return (
+                      this.state.dontShow.indexOf(book.id) === -1 && (
+                        <TableRow key={book.id}>
+                          <TableCell>
+                            <img
+                              src={
+                                book.volumeInfo.imageLinks
+                                  ? book.volumeInfo.imageLinks.thumbnail
+                                  : defaultBook
+                              }
+                              alt={book.title}
+                            ></img>
+                          </TableCell>
+                          <TableCell>
+                            {book.volumeInfo.title ? book.volumeInfo.title : ""}
+                          </TableCell>
+                          <TableCell>
+                            {book.volumeInfo.authors
+                              ? book.volumeInfo.authors.join(", ")
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            {book.volumeInfo.publisher
+                              ? book.volumeInfo.publisher
+                              : ""}
+                          </TableCell>
+                          <TableCell>
+                            {book.volumeInfo.publishedDate
+                              ? book.volumeInfo.publishedDate
+                              : ""}
+                          </TableCell>
 
-                        <TableCell>
-                          <IconButton
-                            onClick={() => {
-                              this.handleRequestDialogOpen(book.id);
-                            }}
-                            disabled={
-                              this.state.dontShow.length >= numOfAllowedBooks
-                            }
-                          >
-                            <AddIcon />
-                          </IconButton>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  );
-                })}
+                          <TableCell>
+                            <IconButton
+                              onClick={() => {
+                                this.handleRequestDialogOpen(book.id);
+                              }}
+                              disabled={
+                                this.state.dontShow.length >= numOfAllowedBooks
+                              }
+                            >
+                              <AddIcon />
+                            </IconButton>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    );
+                  })}
               </TableBody>
             </Table>
           </TableContainer>
