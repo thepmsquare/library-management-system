@@ -387,6 +387,7 @@ class Inventory extends Component {
                 const docs2 = [];
                 querySnapshot2.forEach((doc) => {
                   if (
+                    doc.data().history.find((ele) => ele.status === "lost") &&
                     doc.data().history.find((ele) => ele.status === "lost").time
                       .seconds === seconds
                   ) {
