@@ -315,6 +315,15 @@ class History extends Component {
   };
 
   render = () => {
+    let activity = [];
+    if (this.state.requests.length > 0) {
+      this.state.requests.forEach((ele) => {
+        ele.history.forEach((historyEle) => {
+          activity.push({ ...historyEle, title: ele.title });
+        });
+      });
+    }
+
     return (
       <div className="History">
         <Typography variant="h3">History</Typography>
@@ -491,7 +500,35 @@ class History extends Component {
             </TableContainer>
           </div>
         )}
-
+        {activity.length > 0 && (
+          <TableContainer component={Paper}>
+            <Typography variant="h5">Activity</Typography>
+            <Table>
+              <TableHead>
+                <TableRow>
+                  <TableCell>Book</TableCell>
+                  <TableCell>Status</TableCell>
+                  <TableCell>Date</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {activity
+                  .sort((a, b) => b.time.seconds - a.time.seconds)
+                  .map((ele) => {
+                    return (
+                      <TableRow key={ele.time.seconds}>
+                        <TableCell>{ele.title}</TableCell>
+                        <TableCell>{this.toTitleCase(ele.status)}</TableCell>
+                        <TableCell>
+                          {ele.time.toDate().toLocaleDateString()}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        )}
         <Dialog
           open={this.state.isApproveCancelDialogOpen}
           onClose={this.handleDialogClose}
