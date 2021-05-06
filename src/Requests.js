@@ -49,7 +49,8 @@ class Requests extends Component {
           if (
             status === "pending" ||
             status === "approved" ||
-            status === "collected"
+            status === "collected" ||
+            status === "lost"
           ) {
             try {
               const url =
@@ -57,18 +58,32 @@ class Requests extends Component {
                 doc.data().bookID;
               const result = await fetch(url);
               const apiData = await result.json();
-              requests.push({
-                title: apiData.volumeInfo.title,
-                ...doc.data(),
-                status,
-              });
-              this.setState(() => {
-                return { requests };
-              });
+              db.collection("Inventory")
+                .where("id", "==", doc.data().bookID)
+                .get()
+                .then((querySnapshot2) => {
+                  const docs2 = [];
+                  querySnapshot2.forEach((doc) => docs2.push(doc.data()));
+                  requests.push({
+                    price: docs2[0].price,
+                    title: apiData.volumeInfo.title,
+                    ...doc.data(),
+                    status,
+                  });
+                  this.setState(() => {
+                    return { requests };
+                  });
+                })
+                .catch((error) => {
+                  this.props.handleSnackbarOpen(error.message);
+                });
             } catch (error) {
               this.props.handleSnackbarOpen(error.message);
             }
           }
+        });
+        this.setState(() => {
+          return { requests };
         });
       });
   };
@@ -108,11 +123,7 @@ class Requests extends Component {
         querySnapshot.forEach((doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
+          if (status === "pending") {
             docs.push(doc.ref);
           }
         });
@@ -199,11 +210,7 @@ class Requests extends Component {
         querySnapshot.forEach((doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
+          if (status === "pending") {
             docs.push(doc.ref);
           }
         });
@@ -256,11 +263,7 @@ class Requests extends Component {
         querySnapshot.forEach((doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
+          if (status === "approved") {
             docs.push(doc.ref);
           }
         });
@@ -309,11 +312,7 @@ class Requests extends Component {
         querySnapshot.forEach((doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
+          if (status === "approved") {
             docs.push(doc.ref);
           }
         });
@@ -375,26 +374,37 @@ class Requests extends Component {
       });
   };
 
-  getFine = (date1, date2) => {
-    const diffDays = this.getDays(date1, date2);
-    if (diffDays <= 7) {
-      return 0;
-    } else if (diffDays <= 14) {
-      return 10;
-    } else if (diffDays <= 21) {
-      return 20;
-    } else if (diffDays <= 28) {
-      return 30;
+  getFine = (date1, date2, price, status) => {
+    if (status === "lost") {
+      return 30 + parseFloat(price);
     } else {
-      return 30;
+      const diffDays = this.getDays(date1, date2);
+      if (diffDays <= 7) {
+        return 0;
+      } else if (diffDays <= 14) {
+        return 10;
+      } else if (diffDays <= 21) {
+        return 20;
+      } else if (diffDays <= 28) {
+        return 30;
+      } else {
+        return 30 + parseFloat(price);
+      }
     }
   };
 
-  handleReturnConfirmDialogOpen = (bookID, userID, title, history) => {
+  handleReturnConfirmDialogOpen = (
+    bookID,
+    userID,
+    title,
+    history,
+    status,
+    price
+  ) => {
     this.setState(() => {
       return {
         isReturnConfirmDialogOpen: true,
-        toReturnConfirm: { bookID, userID, title, history },
+        toReturnConfirm: { bookID, userID, title, history, status, price },
       };
     });
   };
@@ -410,11 +420,7 @@ class Requests extends Component {
         querySnapshot.forEach((doc) => {
           const status = doc.data().history[doc.data().history.length - 1]
             .status;
-          if (
-            status === "pending" ||
-            status === "approved" ||
-            status === "collected"
-          ) {
+          if (status === "lost" || status === "collected") {
             docs.push(doc.ref);
           }
         });
@@ -425,32 +431,38 @@ class Requests extends Component {
               time: firebase.firestore.Timestamp.fromDate(new Date(Date.now())),
             }),
           })
-          .then(
-            db
-              .collection("Inventory")
-              .where("id", "==", this.state.toReturnConfirm.bookID)
-              .get()
-              .then((querySnapshot2) => {
-                const docs2 = [];
-                querySnapshot2.forEach((doc) => docs2.push(doc.ref));
-                docs2[0]
-                  .update({
-                    quantity: firebase.firestore.FieldValue.increment(1),
-                  })
-                  .then(() => {
-                    this.props.handleSnackbarOpen(
-                      `${this.state.toReturnConfirm.title} returned by ${this.state.toReturnConfirm.userID}.`
-                    );
-                    this.handleDialogClose();
-                  })
-                  .catch((error) => {
-                    this.props.handleSnackbarOpen(error.message);
-                  });
-              })
-              .catch((error) => {
-                this.props.handleSnackbarOpen(error.message);
-              })
-          )
+          .then(() => {
+            if (this.state.toReturnConfirm.status === "collected") {
+              db.collection("Inventory")
+                .where("id", "==", this.state.toReturnConfirm.bookID)
+                .get()
+                .then((querySnapshot2) => {
+                  const docs2 = [];
+                  querySnapshot2.forEach((doc) => docs2.push(doc.ref));
+                  docs2[0]
+                    .update({
+                      quantity: firebase.firestore.FieldValue.increment(1),
+                    })
+                    .then(() => {
+                      this.props.handleSnackbarOpen(
+                        `${this.state.toReturnConfirm.title} returned by ${this.state.toReturnConfirm.userID}.`
+                      );
+                      this.handleDialogClose();
+                    })
+                    .catch((error) => {
+                      this.props.handleSnackbarOpen(error.message);
+                    });
+                })
+                .catch((error) => {
+                  this.props.handleSnackbarOpen(error.message);
+                });
+            } else {
+              this.props.handleSnackbarOpen(
+                `Fine for ${this.state.toReturnConfirm.title} paid by ${this.state.toReturnConfirm.userID}.`
+              );
+              this.handleDialogClose();
+            }
+          })
           .catch((error) => {
             this.handleDialogClose();
             this.props.handleSnackbarOpen(error.message);
@@ -617,13 +629,16 @@ class Requests extends Component {
                     <TableCell>User ID</TableCell>
                     <TableCell>Status</TableCell>
                     <TableCell>Due Date</TableCell>
-                    <TableCell>Late Fees</TableCell>
+                    <TableCell>Late Fees (₹)</TableCell>
                     <TableCell></TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {this.state.requests
-                    .filter((ele) => ele.status === "collected")
+                    .filter(
+                      (ele) =>
+                        ele.status === "collected" || ele.status === "lost"
+                    )
                     .map((request) => {
                       return (
                         <TableRow key={request.title + request.userID}>
@@ -634,18 +649,25 @@ class Requests extends Component {
                           </TableCell>
                           <TableCell>
                             {new Date(
-                              request.history[request.history.length - 1].time
-                                .toDate()
+                              request.history
+                                .find((ele) => {
+                                  return ele.status === "collected";
+                                })
+                                .time.toDate()
                                 .getTime() +
                                 7 * 24 * 60 * 60 * 1000
                             ).toLocaleDateString()}
                           </TableCell>
                           <TableCell>
                             {this.getFine(
-                              request.history[
-                                request.history.length - 1
-                              ].time.toDate(),
-                              new Date(Date.now())
+                              request.history
+                                .find((ele) => {
+                                  return ele.status === "collected";
+                                })
+                                .time.toDate(),
+                              new Date(Date.now()),
+                              request.price,
+                              request.status
                             )}
                           </TableCell>
                           <TableCell>
@@ -656,7 +678,9 @@ class Requests extends Component {
                                   request.bookID,
                                   request.userID,
                                   request.title,
-                                  request.history
+                                  request.history,
+                                  request.status,
+                                  request.price
                                 );
                               }}
                             >
@@ -755,10 +779,14 @@ class Requests extends Component {
                 Fine: ₹
                 {this.state.isReturnConfirmDialogOpen &&
                   this.getFine(
-                    this.state.toReturnConfirm.history[
-                      this.state.toReturnConfirm.history.length - 1
-                    ].time.toDate(),
-                    new Date(Date.now())
+                    this.state.toReturnConfirm.history
+                      .find((ele) => {
+                        return ele.status === "collected";
+                      })
+                      .time.toDate(),
+                    new Date(Date.now()),
+                    this.state.toReturnConfirm.price,
+                    this.state.toReturnConfirm.status
                   )}
               </Typography>
             </DialogContent>
