@@ -578,7 +578,7 @@ class Requests extends Component {
           0 && (
           <div>
             <Typography variant="h5">Not yet Collected</Typography>
-            <TableContainer>
+            <TableContainer component={Paper}>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -659,7 +659,7 @@ class Requests extends Component {
         ).length > 0 && (
           <div>
             <Typography variant="h5">Not yet Returned</Typography>
-            <TableContainer>
+            <TableContainer component={Paper}>
               <Table>
                 <TableHead>
                   <TableRow>

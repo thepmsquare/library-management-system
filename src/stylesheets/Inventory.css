@@ -1,12 +1,12 @@
 .Inventory {
   flex-grow: 1;
   display: flex;
-  align-items: center;
   flex-direction: column;
   gap: 1rem;
+  width: 90vw;
+  margin: 0 auto;
 }
 .Inventory-AddItem {
-  width: 80vw;
   padding: 1rem;
 }
 .Inventory-AddItemForm {

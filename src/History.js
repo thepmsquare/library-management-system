@@ -379,7 +379,7 @@ class History extends Component {
           0 && (
           <div>
             <Typography variant="h5">Not yet Collected</Typography>
-            <TableContainer>
+            <TableContainer component={Paper}>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -426,7 +426,7 @@ class History extends Component {
         ).length > 0 && (
           <div>
             <Typography variant="h5">Not yet Returned</Typography>
-            <TableContainer>
+            <TableContainer component={Paper}>
               <Table>
                 <TableHead>
                   <TableRow>
@@ -501,33 +501,35 @@ class History extends Component {
           </div>
         )}
         {activity.length > 0 && (
-          <TableContainer component={Paper}>
+          <div>
             <Typography variant="h5">Activity</Typography>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Book</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Date</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {activity
-                  .sort((a, b) => b.time.seconds - a.time.seconds)
-                  .map((ele) => {
-                    return (
-                      <TableRow key={ele.time.seconds}>
-                        <TableCell>{ele.title}</TableCell>
-                        <TableCell>{this.toTitleCase(ele.status)}</TableCell>
-                        <TableCell>
-                          {ele.time.toDate().toLocaleDateString()}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Book</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Date</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {activity
+                    .sort((a, b) => b.time.seconds - a.time.seconds)
+                    .map((ele) => {
+                      return (
+                        <TableRow key={ele.time.seconds}>
+                          <TableCell>{ele.title}</TableCell>
+                          <TableCell>{this.toTitleCase(ele.status)}</TableCell>
+                          <TableCell>
+                            {ele.time.toDate().toLocaleDateString()}
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
         )}
         <Dialog
           open={this.state.isApproveCancelDialogOpen}

@@ -39,26 +39,28 @@ class UserNotifications extends Component {
     return (
       <div className="UserNotifications">
         <Typography variant="h3">Notifications</Typography>
-        <Paper className="UserNotifications-Container">
-          <List>
-            {this.state.notifications.length > 0 &&
-              this.state.notifications.map((notification) => {
-                return (
-                  <div key={notification.time.seconds}>
-                    <ListItem>
-                      <ListItemText
-                        primary={notification.message}
-                        secondary={notification.time
-                          .toDate()
-                          .toLocaleDateString()}
-                      />
-                    </ListItem>
-                    <Divider />
-                  </div>
-                );
-              })}
-          </List>
-        </Paper>
+        {this.state.notifications.length > 0 && (
+          <Paper className="UserNotifications-Container">
+            <List>
+              {this.state.notifications.length > 0 &&
+                this.state.notifications.map((notification) => {
+                  return (
+                    <div key={notification.time.seconds}>
+                      <ListItem>
+                        <ListItemText
+                          primary={notification.message}
+                          secondary={notification.time
+                            .toDate()
+                            .toLocaleDateString()}
+                        />
+                      </ListItem>
+                      <Divider />
+                    </div>
+                  );
+                })}
+            </List>
+          </Paper>
+        )}
       </div>
     );
   };
