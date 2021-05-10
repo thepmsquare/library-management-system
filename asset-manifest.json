@@ -1,25 +1,25 @@
 {
   "files": {
-    "main.css": "/library-management-system/static/css/main.bc80571e.chunk.css",
-    "main.js": "/library-management-system/static/js/main.78f7d8f4.chunk.js",
-    "main.js.map": "/library-management-system/static/js/main.78f7d8f4.chunk.js.map",
-    "runtime-main.js": "/library-management-system/static/js/runtime-main.0c79b4e3.js",
-    "runtime-main.js.map": "/library-management-system/static/js/runtime-main.0c79b4e3.js.map",
-    "static/js/2.e33c8d42.chunk.js": "/library-management-system/static/js/2.e33c8d42.chunk.js",
-    "static/js/2.e33c8d42.chunk.js.map": "/library-management-system/static/js/2.e33c8d42.chunk.js.map",
-    "static/js/3.263e1a11.chunk.js": "/library-management-system/static/js/3.263e1a11.chunk.js",
-    "static/js/3.263e1a11.chunk.js.map": "/library-management-system/static/js/3.263e1a11.chunk.js.map",
+    "main.css": "/library-management-system/static/css/main.69b0b513.chunk.css",
+    "main.js": "/library-management-system/static/js/main.d79f4c2b.chunk.js",
+    "main.js.map": "/library-management-system/static/js/main.d79f4c2b.chunk.js.map",
+    "runtime-main.js": "/library-management-system/static/js/runtime-main.a910e81a.js",
+    "runtime-main.js.map": "/library-management-system/static/js/runtime-main.a910e81a.js.map",
+    "static/js/2.8aead422.chunk.js": "/library-management-system/static/js/2.8aead422.chunk.js",
+    "static/js/2.8aead422.chunk.js.map": "/library-management-system/static/js/2.8aead422.chunk.js.map",
+    "static/js/3.5d9017b9.chunk.js": "/library-management-system/static/js/3.5d9017b9.chunk.js",
+    "static/js/3.5d9017b9.chunk.js.map": "/library-management-system/static/js/3.5d9017b9.chunk.js.map",
     "index.html": "/library-management-system/index.html",
     "service-worker.js": "/library-management-system/service-worker.js",
     "service-worker.js.map": "/library-management-system/service-worker.js.map",
-    "static/css/main.bc80571e.chunk.css.map": "/library-management-system/static/css/main.bc80571e.chunk.css.map",
-    "static/js/2.e33c8d42.chunk.js.LICENSE.txt": "/library-management-system/static/js/2.e33c8d42.chunk.js.LICENSE.txt",
+    "static/css/main.69b0b513.chunk.css.map": "/library-management-system/static/css/main.69b0b513.chunk.css.map",
+    "static/js/2.8aead422.chunk.js.LICENSE.txt": "/library-management-system/static/js/2.8aead422.chunk.js.LICENSE.txt",
     "static/media/defaultBook.3309b0ae.png": "/library-management-system/static/media/defaultBook.3309b0ae.png"
   },
   "entrypoints": [
-    "static/js/runtime-main.0c79b4e3.js",
-    "static/js/2.e33c8d42.chunk.js",
-    "static/css/main.bc80571e.chunk.css",
-    "static/js/main.78f7d8f4.chunk.js"
+    "static/js/runtime-main.a910e81a.js",
+    "static/js/2.8aead422.chunk.js",
+    "static/css/main.69b0b513.chunk.css",
+    "static/js/main.d79f4c2b.chunk.js"
   ]
 }
