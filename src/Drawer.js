@@ -11,6 +11,7 @@ import StoreIcon from "@material-ui/icons/Store";
 import PlaylistAddCheckIcon from "@material-ui/icons/PlaylistAddCheck";
 import HistoryIcon from "@material-ui/icons/History";
 import NotificationsIcon from "@material-ui/icons/Notifications";
+import MenuBookIcon from "@material-ui/icons/MenuBook";
 
 class Drawer extends Component {
   handleInventoryClick = () => {
@@ -35,6 +36,11 @@ class Drawer extends Component {
 
   handleUserNotificationsClick = () => {
     this.props.handleChangeFocus("UserNotifications");
+    this.props.handleDrawerClose();
+  };
+
+  handleEbooksClick = () => {
+    this.props.handleChangeFocus("Ebooks");
     this.props.handleDrawerClose();
   };
 
@@ -93,6 +99,14 @@ class Drawer extends Component {
                 <HistoryIcon />
               </ListItemIcon>
               <ListItemText primary="History" />
+            </ListItem>
+          )}
+          {!this.props.isUserAdmin && (
+            <ListItem button key="Ebooks" onClick={this.handleEbooksClick}>
+              <ListItemIcon>
+                <MenuBookIcon />
+              </ListItemIcon>
+              <ListItemText primary="Ebooks" />
             </ListItem>
           )}
         </List>

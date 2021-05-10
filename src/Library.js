@@ -269,105 +269,111 @@ class Library extends Component {
     return (
       <div className="Library">
         <Typography variant="h3">Library</Typography>
-        <TextField
-          variant="outlined"
-          value={this.state.searchValue}
-          name="searchValue"
-          onChange={this.handleInputChange}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-        />
         {this.state.library.length > 0 && !this.state.fineRemaining && (
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell></TableCell>
-                  <TableCell>Title</TableCell>
-                  <TableCell>Authors</TableCell>
-                  <TableCell>Publisher</TableCell>
-                  <TableCell>Published Date</TableCell>
-                  <TableCell></TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {this.state.library
-                  .filter((ele) => {
-                    return this.state.searchValue
-                      ? ele.volumeInfo.title
-                          .toLowerCase()
-                          .indexOf(this.state.searchValue.toLowerCase()) !==
-                          -1 ||
-                        (ele.volumeInfo.publisher &&
-                          ele.volumeInfo.publisher
+          <div className="Library-Container">
+            <TextField
+              variant="outlined"
+              value={this.state.searchValue}
+              name="searchValue"
+              onChange={this.handleInputChange}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon />
+                  </InputAdornment>
+                ),
+              }}
+            />
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell></TableCell>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Authors</TableCell>
+                    <TableCell>Publisher</TableCell>
+                    <TableCell>Published Date</TableCell>
+                    <TableCell></TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {this.state.library
+                    .filter((ele) => {
+                      return this.state.searchValue
+                        ? ele.volumeInfo.title
                             .toLowerCase()
                             .indexOf(this.state.searchValue.toLowerCase()) !==
-                            -1) ||
-                        ele.volumeInfo.authors
-                          .join(" ")
-                          .toLowerCase()
-                          .indexOf(this.state.searchValue.toLowerCase()) !== -1
-                        ? true
-                        : false
-                      : true;
-                  })
-                  .map((book) => {
-                    return (
-                      this.state.dontShow.indexOf(book.id) === -1 && (
-                        <TableRow key={book.id}>
-                          <TableCell>
-                            <img
-                              src={
-                                book.volumeInfo.imageLinks
-                                  ? book.volumeInfo.imageLinks.thumbnail
-                                  : defaultBook
-                              }
-                              alt={book.title}
-                            ></img>
-                          </TableCell>
-                          <TableCell>
-                            {book.volumeInfo.title ? book.volumeInfo.title : ""}
-                          </TableCell>
-                          <TableCell>
-                            {book.volumeInfo.authors
-                              ? book.volumeInfo.authors.join(", ")
-                              : ""}
-                          </TableCell>
-                          <TableCell>
-                            {book.volumeInfo.publisher
-                              ? book.volumeInfo.publisher
-                              : ""}
-                          </TableCell>
-                          <TableCell>
-                            {book.volumeInfo.publishedDate
-                              ? book.volumeInfo.publishedDate
-                              : ""}
-                          </TableCell>
+                            -1 ||
+                          (ele.volumeInfo.publisher &&
+                            ele.volumeInfo.publisher
+                              .toLowerCase()
+                              .indexOf(this.state.searchValue.toLowerCase()) !==
+                              -1) ||
+                          ele.volumeInfo.authors
+                            .join(" ")
+                            .toLowerCase()
+                            .indexOf(this.state.searchValue.toLowerCase()) !==
+                            -1
+                          ? true
+                          : false
+                        : true;
+                    })
+                    .map((book) => {
+                      return (
+                        this.state.dontShow.indexOf(book.id) === -1 && (
+                          <TableRow key={book.id}>
+                            <TableCell>
+                              <img
+                                src={
+                                  book.volumeInfo.imageLinks
+                                    ? book.volumeInfo.imageLinks.thumbnail
+                                    : defaultBook
+                                }
+                                alt={book.title}
+                              ></img>
+                            </TableCell>
+                            <TableCell>
+                              {book.volumeInfo.title
+                                ? book.volumeInfo.title
+                                : ""}
+                            </TableCell>
+                            <TableCell>
+                              {book.volumeInfo.authors
+                                ? book.volumeInfo.authors.join(", ")
+                                : ""}
+                            </TableCell>
+                            <TableCell>
+                              {book.volumeInfo.publisher
+                                ? book.volumeInfo.publisher
+                                : ""}
+                            </TableCell>
+                            <TableCell>
+                              {book.volumeInfo.publishedDate
+                                ? book.volumeInfo.publishedDate
+                                : ""}
+                            </TableCell>
 
-                          <TableCell>
-                            <IconButton
-                              onClick={() => {
-                                this.handleRequestDialogOpen(book.id);
-                              }}
-                              disabled={
-                                this.state.dontShow.length >= numOfAllowedBooks
-                              }
-                            >
-                              <AddIcon />
-                            </IconButton>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    );
-                  })}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                            <TableCell>
+                              <IconButton
+                                onClick={() => {
+                                  this.handleRequestDialogOpen(book.id);
+                                }}
+                                disabled={
+                                  this.state.dontShow.length >=
+                                  numOfAllowedBooks
+                                }
+                              >
+                                <AddIcon />
+                              </IconButton>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      );
+                    })}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </div>
         )}
         {this.state.fineRemaining && (
           <Typography color="secondary" variant="h4">

@@ -10,6 +10,7 @@ import Inventory from "./Inventory";
 import Requests from "./Requests";
 import History from "./History";
 import UserNotifications from "./UserNotifications";
+import Ebooks from "./Ebooks";
 import "./stylesheets/Homepage.css";
 
 class Homepage extends Component {
@@ -105,6 +106,13 @@ class Homepage extends Component {
         {this.state.componentInFocus === "History" &&
           !this.props.isUserAdmin && (
             <History
+              handleSnackbarOpen={this.handleSnackbarOpen}
+              user={this.props.user}
+            />
+          )}
+        {this.state.componentInFocus === "Ebooks" &&
+          !this.props.isUserAdmin && (
+            <Ebooks
               handleSnackbarOpen={this.handleSnackbarOpen}
               user={this.props.user}
             />
