@@ -14,7 +14,7 @@ import "firebase/auth";
 import "firebase/firestore";
 import "firebase/analytics";
 const firebaseConfig = {
-  ...
+  //...
 };
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
