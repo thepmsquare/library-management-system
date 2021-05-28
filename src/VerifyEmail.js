@@ -22,7 +22,12 @@ class VerifyEmail extends Component {
       passwordInput: "",
     };
   }
-
+  componentDidMount = () => {
+    this.checkForVerification = setInterval(this.handleReload, 3000);
+  };
+  componentWillUnmount = () => {
+    clearInterval(this.checkForVerification);
+  };
   handleSnackbarClose = () => {
     this.setState(() => {
       return { isSnackbarOpen: false, snackbarMessage: "" };
@@ -34,7 +39,8 @@ class VerifyEmail extends Component {
   };
 
   handleReload = () => {
-    window.location.reload();
+    this.props.user.reload();
+    this.props.updateUser(this.props.user);
   };
 
   handleResend = () => {

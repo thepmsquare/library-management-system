@@ -19,6 +19,12 @@ class App extends Component {
     this.checkLogin();
   };
 
+  updateUser = (user) => {
+    this.setState(() => {
+      return { user };
+    });
+  };
+
   checkLogin = () => {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
@@ -67,7 +73,10 @@ class App extends Component {
                   isUserAdmin={this.state.isUserAdmin}
                 />
               ) : (
-                <VerifyEmail user={this.state.user} />
+                <VerifyEmail
+                  user={this.state.user}
+                  updateUser={this.updateUser}
+                />
               )
             ) : (
               <Redirect
