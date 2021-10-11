@@ -92,20 +92,32 @@ class VerifyEmail extends Component {
         this.props.user
           .updateEmail(this.state.newEmailInput)
           .then(() => {
-            this.setState(
-              () => {
-                return {
-                  isSnackbarOpen: true,
-                  snackbarMessage: `Email changed to ${this.state.newEmailInput}`,
-                  isUserChangingEmail: false,
-                  newEmailInput: "",
-                  passwordInput: "",
-                };
-              },
-              () => {
-                this.props.user.reload();
-              }
-            );
+            this.props.user
+              .sendEmailVerification()
+              .then(() => {
+                this.setState(
+                  () => {
+                    return {
+                      isSnackbarOpen: true,
+                      snackbarMessage: `Email changed to ${this.state.newEmailInput}`,
+                      isUserChangingEmail: false,
+                      newEmailInput: "",
+                      passwordInput: "",
+                    };
+                  },
+                  () => {
+                    this.props.user.reload();
+                  }
+                );
+              })
+              .catch((error) => {
+                this.setState(() => {
+                  return {
+                    isSnackbarOpen: true,
+                    snackbarMessage: error.message,
+                  };
+                });
+              });
           })
           .catch((error) => {
             this.setState(() => {

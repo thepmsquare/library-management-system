@@ -104,6 +104,7 @@ class Profile extends Component {
   };
 
   handleChangeEmailSubmit = (e) => {
+    console.log("Inside the handleChangeEmailSubmit");
     e.preventDefault();
     const credential = firebase.auth.EmailAuthProvider.credential(
       this.props.user.email,
@@ -111,13 +112,17 @@ class Profile extends Component {
     );
     this.props.user
       .reauthenticateWithCredential(credential)
+
       .then(() => {
+        console.log("Inside the reauthenticateWithCredential");
         this.props.user
           .updateEmail(this.state.newEmail)
           .then(() => {
+            console.log("Inside the updateEmail");
             this.props.user
               .sendEmailVerification()
               .then(() => {
+                console.log("Inside the sendEmailVerification");
                 this.setState(
                   () => {
                     return {
