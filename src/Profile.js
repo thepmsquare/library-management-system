@@ -111,6 +111,7 @@ class Profile extends Component {
     );
     this.props.user
       .reauthenticateWithCredential(credential)
+
       .then(() => {
         this.props.user
           .updateEmail(this.state.newEmail)
