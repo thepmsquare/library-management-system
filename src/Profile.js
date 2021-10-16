@@ -119,7 +119,6 @@ class Profile extends Component {
             this.props.user
               .sendEmailVerification()
               .then(() => {
-                console.log("Inside the sendEmailVerification");
                 this.setState(
                   () => {
                     return {
