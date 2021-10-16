@@ -116,7 +116,6 @@ class Profile extends Component {
         this.props.user
           .updateEmail(this.state.newEmail)
           .then(() => {
-            console.log("Inside the updateEmail");
             this.props.user
               .sendEmailVerification()
               .then(() => {
