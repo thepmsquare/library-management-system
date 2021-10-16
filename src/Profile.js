@@ -104,7 +104,6 @@ class Profile extends Component {
   };
 
   handleChangeEmailSubmit = (e) => {
-    console.log("Inside the handleChangeEmailSubmit");
     e.preventDefault();
     const credential = firebase.auth.EmailAuthProvider.credential(
       this.props.user.email,
